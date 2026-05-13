@@ -1,11 +1,12 @@
 const express = require("express");
+require("dotenv").config();
 const session = require("express-session");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { marked } = require("marked");
+const { marked } = require(path.join(__dirname, "node_modules", "marked", "lib", "marked.umd.js"));
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
