@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<!-- page-type:md -->
+<!-- md-source:IyBTbGlkaW5nIFdpbmRvdyBNYXN0ZXIgR3VpZGUgKyBMZWV0Q29kZSBQYXR0ZXJuIFNoZWV0CgpUaGlzIHZlcnNpb24gbWFwcyBlYWNoIHNsaWRpbmcgd2luZG93IHBhdHRlcm4gdG8gdGhlIG1vc3QgcmVsZXZhbnQgTGVldENvZGUgcXVlc3Rpb25zIHNvIHlvdSBjYW4gcHJhY3RpY2UgcGF0dGVybiByZWNvZ25pdGlvbiBzeXN0ZW1hdGljYWxseS4KCi0tLQoKIyAxLiBGaXhlZCBTaXplIFNsaWRpbmcgV2luZG93CgojIyBSZWNvZ25pdGlvbgoKVXNlIHdoZW46CgoqIHdpbmRvdyBzaXplIEsgaXMgZml4ZWQKKiDigJxzdWJhcnJheSBvZiBzaXplIEvigJ0KKiDigJxLIGNvbnNlY3V0aXZlIGVsZW1lbnRz4oCdCiogZml4ZWQtbGVuZ3RoIHN1YnN0cmluZwoKIyMgQ29yZSBJZGVhCgpBZGQgcmlnaHQgZWxlbWVudC4KUmVtb3ZlIGxlZnQgZWxlbWVudC4KTWFpbnRhaW4gZXhhY3Qgc2l6ZSBLLgoKIyMgVGVtcGxhdGUKCmBgYGNwcAppbnQgaSA9IDAsIGogPSAwOwoKd2hpbGUgKGogPCBuKQp7CiAgICBhZGQoYXJyW2pdKTsKCiAgICBpZiAoaiAtIGkgKyAxIDwgaykKICAgIHsKICAgICAgICBqKys7CiAgICB9CiAgICBlbHNlIGlmIChqIC0gaSArIDEgPT0gaykKICAgIHsKICAgICAgICBwcm9jZXNzKCk7CgogICAgICAgIHJlbW92ZShhcnJbaV0pOwogICAgICAgIGkrKzsKICAgICAgICBqKys7CiAgICB9Cn0KYGBgCgojIyBSZWxldmFudCBMZWV0Q29kZSBQcm9ibGVtcwoKIyMjIEJlZ2lubmVyCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCBMQyAgIHwKfCAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHwgLS0tLSB8CnwgTWF4aW11bSBBdmVyYWdlIFN1YmFycmF5IEkgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8IDY0MyAgfAp8IE1heGltdW0gTnVtYmVyIG9mIFZvd2VscyBpbiBhIFN1YnN0cmluZyBvZiBHaXZlbiBMZW5ndGggfCAxNDU2IHwKfCBOdW1iZXIgb2YgU3ViLWFycmF5cyBvZiBTaXplIEsgYW5kIEF2ZXJhZ2Ug4omlIFRocmVzaG9sZCAgfCAxMzQzIHwKfCBTdWJzdHJpbmdzIG9mIFNpemUgVGhyZWUgd2l0aCBEaXN0aW5jdCBDaGFyYWN0ZXJzICAgICAgIHwgMTg3NiB8CgojIyMgSW50ZXJtZWRpYXRlCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgIHwgTEMgICB8CnwgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gfCAtLS0tIHwKfCBGaW5kIEFsbCBBbmFncmFtcyBpbiBhIFN0cmluZyB8IDQzOCAgfAp8IERlZnVzZSB0aGUgQm9tYiAgICAgICAgICAgICAgIHwgMTY1MiB8CnwgR3J1bXB5IEJvb2tzdG9yZSBPd25lciAgICAgICAgfCAxMDUyIHwKfCBLIFJhZGl1cyBTdWJhcnJheSBBdmVyYWdlcyAgICB8IDIwOTAgfAoKIyMjIEFkdmFuY2VkCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgTEMgIHwKfCAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB8IC0tLSB8CnwgU2xpZGluZyBXaW5kb3cgTWVkaWFuICAgICAgICAgICAgICAgICAgICAgfCA0ODAgfAp8IFN1YnN0cmluZyB3aXRoIENvbmNhdGVuYXRpb24gb2YgQWxsIFdvcmRzIHwgMzAgIHwKCi0tLQoKIyAyLiBWYXJpYWJsZSBXaW5kb3cg4oCUIExvbmdlc3QgUGF0dGVybgoKIyMgUmVjb2duaXRpb24KClVzZSB3aGVuIHByb2JsZW0gYXNrczoKCiogbG9uZ2VzdAoqIG1heGltdW0gbGVuZ3RoCiogYXQgbW9zdCBLCiogbGFyZ2VzdCB2YWxpZCB3aW5kb3cKCiMjIENvcmUgSWRlYQoKRXhwYW5kIGFnZ3Jlc3NpdmVseS4KU2hyaW5rIG9ubHkgd2hlbiBpbnZhbGlkLgoKIyMgVGVtcGxhdGUKCmBgYGNwcAppbnQgaSA9IDA7Cgpmb3IgKGludCBqID0gMDsgaiA8IG47IGorKykKewogICAgYWRkKGFycltqXSk7CgogICAgd2hpbGUgKGludmFsaWQpCiAgICB7CiAgICAgICAgcmVtb3ZlKGFycltpXSk7CiAgICAgICAgaSsrOwogICAgfQoKICAgIGFucyA9IG1heChhbnMsIGogLSBpICsgMSk7Cn0KYGBgCgojIyBSZWxldmFudCBMZWV0Q29kZSBQcm9ibGVtcwoKIyMjIEJlZ2lubmVyCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCBMQyAgfAp8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gfCAtLS0gfAp8IExvbmdlc3QgU3Vic3RyaW5nIFdpdGhvdXQgUmVwZWF0aW5nIENoYXJhY3RlcnMgfCAzICAgfAp8IEZydWl0IEludG8gQmFza2V0cyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCA5MDQgfAoKIyMjIEludGVybWVkaWF0ZQoKfCBQcm9ibGVtICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCBMQyAgIHwKfCAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gfCAtLS0tIHwKfCBNYXggQ29uc2VjdXRpdmUgT25lcyBJSUkgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAxMDA0IHwKfCBMb25nZXN0IFJlcGVhdGluZyBDaGFyYWN0ZXIgUmVwbGFjZW1lbnQgICAgICAgICAgICAgICAgfCA0MjQgIHwKfCBMb25nZXN0IFN1YnN0cmluZyB3aXRoIEF0IE1vc3QgVHdvIERpc3RpbmN0IENoYXJhY3RlcnMgfCAxNTkgIHwKfCBMb25nZXN0IFN1YnN0cmluZyB3aXRoIEF0IE1vc3QgSyBEaXN0aW5jdCBDaGFyYWN0ZXJzICAgfCAzNDAgIHwKfCBHZXQgRXF1YWwgU3Vic3RyaW5ncyBXaXRoaW4gQnVkZ2V0ICAgICAgICAgICAgICAgICAgICAgfCAxMjA4IHwKfCBNYXhpbXVtIEVyYXN1cmUgVmFsdWUgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCAxNjk1IHwKCiMjIyBBZHZhbmNlZAoKfCBQcm9ibGVtICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8IExDICAgfAp8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHwgLS0tLSB8CnwgRnJlcXVlbmN5IG9mIHRoZSBNb3N0IEZyZXF1ZW50IEVsZW1lbnQgICAgICAgfCAxODM4IHwKfCBMb25nZXN0IE5pY2UgU3ViYXJyYXkgICAgICAgICAgICAgICAgICAgICAgICB8IDI0MDEgfAp8IFRha2UgSyBvZiBFYWNoIENoYXJhY3RlciBGcm9tIExlZnQgYW5kIFJpZ2h0IHwgMjUxNiB8CgotLS0KCiMgMy4gVmFyaWFibGUgV2luZG93IOKAlCBTaG9ydGVzdCBQYXR0ZXJuCgojIyBSZWNvZ25pdGlvbgoKVXNlIHdoZW4gcHJvYmxlbSBhc2tzOgoKKiBtaW5pbXVtCiogc2hvcnRlc3QKKiBzbWFsbGVzdCB3aW5kb3cKCiMjIENvcmUgSWRlYQoKRXhwYW5kIHVudGlsIHZhbGlkLgpUaGVuIHNocmluayBhcyBtdWNoIGFzIHBvc3NpYmxlLgoKIyMgVGVtcGxhdGUKCmBgYGNwcAppbnQgaSA9IDA7Cgpmb3IgKGludCBqID0gMDsgaiA8IG47IGorKykKewogICAgYWRkKGFycltqXSk7CgogICAgd2hpbGUgKHZhbGlkKQogICAgewogICAgICAgIGFucyA9IG1pbihhbnMsIGogLSBpICsgMSk7CgogICAgICAgIHJlbW92ZShhcnJbaV0pOwogICAgICAgIGkrKzsKICAgIH0KfQpgYGAKCiMjIFJlbGV2YW50IExlZXRDb2RlIFByb2JsZW1zCgojIyMgQmVnaW5uZXIKCnwgUHJvYmxlbSAgICAgICAgICAgICAgICAgICB8IExDICB8CnwgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB8IC0tLSB8CnwgTWluaW11bSBTaXplIFN1YmFycmF5IFN1bSB8IDIwOSB8CgojIyMgSW50ZXJtZWRpYXRlCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgTEMgICB8CnwgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gfCAtLS0tIHwKfCBNaW5pbXVtIFdpbmRvdyBTdWJzdHJpbmcgICAgICAgICAgICAgICB8IDc2ICAgfAp8IE1pbmltdW0gQ29uc2VjdXRpdmUgQ2FyZHMgdG8gUGljayBVcCAgIHwgMjI2MCB8CnwgTWluaW11bSBPcGVyYXRpb25zIHRvIFJlZHVjZSBYIHRvIFplcm8gfCAxNjU4IHwKCiMjIyBBZHZhbmNlZAoKfCBQcm9ibGVtICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgTEMgIHwKfCAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHwgLS0tIHwKfCBTaG9ydGVzdCBTdWJhcnJheSB3aXRoIFN1bSBhdCBMZWFzdCBLIHwgODYyIHwKfCBNaW5pbXVtIFdpbmRvdyBTdWJzZXF1ZW5jZSAgICAgICAgICAgIHwgNzI3IHwKCi0tLQoKIyA0LiBIYXNoTWFwIC8gRnJlcXVlbmN5IFNsaWRpbmcgV2luZG93CgojIyBSZWNvZ25pdGlvbgoKVXNlIHdoZW4gcHJvYmxlbSBpbnZvbHZlczoKCiogZHVwbGljYXRlcwoqIGRpc3RpbmN0IGNoYXJhY3RlcnMKKiBmcmVxdWVuY2llcwoqIG9jY3VycmVuY2VzCiogY291bnRzCgojIyBEYXRhIFN0cnVjdHVyZXMKCiogdW5vcmRlcmVkX21hcAoqIG1hcAoqIGZyZXF1ZW5jeSBhcnJheQoqIHVub3JkZXJlZF9zZXQKCiMjIFRlbXBsYXRlCgpgYGBjcHAKdW5vcmRlcmVkX21hcDxjaGFyLGludD4gbXA7Cgpmb3IgKGludCBqID0gMDsgaiA8IG47IGorKykKewogICAgbXBbc1tqXV0rKzsKCiAgICB3aGlsZSAoaW52YWxpZCkKICAgIHsKICAgICAgICBtcFtzW2ldXS0tOwoKICAgICAgICBpZiAobXBbc1tpXV0gPT0gMCkKICAgICAgICAgICAgbXAuZXJhc2Uoc1tpXSk7CgogICAgICAgIGkrKzsKICAgIH0KfQpgYGAKCiMjIFJlbGV2YW50IExlZXRDb2RlIFByb2JsZW1zCgojIyMgQmVnaW5uZXIKCnwgUHJvYmxlbSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8IExDICB8CnwgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB8IC0tLSB8CnwgTG9uZ2VzdCBTdWJzdHJpbmcgV2l0aG91dCBSZXBlYXRpbmcgQ2hhcmFjdGVycyB8IDMgICB8CnwgRmluZCBBbGwgQW5hZ3JhbXMgaW4gYSBTdHJpbmcgICAgICAgICAgICAgICAgICB8IDQzOCB8CgojIyMgSW50ZXJtZWRpYXRlCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCBMQyAgfAp8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gfCAtLS0gfAp8IFBlcm11dGF0aW9uIGluIFN0cmluZyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCA1NjcgfAp8IExvbmdlc3QgUmVwZWF0aW5nIENoYXJhY3RlciBSZXBsYWNlbWVudCAgICAgICAgICAgICAgfCA0MjQgfAp8IExvbmdlc3QgU3Vic3RyaW5nIHdpdGggQXQgTW9zdCBLIERpc3RpbmN0IENoYXJhY3RlcnMgfCAzNDAgfAp8IE1pbmltdW0gV2luZG93IFN1YnN0cmluZyAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCA3NiAgfAoKIyMjIEFkdmFuY2VkCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8IExDICAgfAp8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB8IC0tLS0gfAp8IFN1YmFycmF5cyB3aXRoIEsgRGlmZmVyZW50IEludGVnZXJzICB8IDk5MiAgfAp8IENvdW50IENvbXBsZXRlIFN1YmFycmF5cyBpbiBhbiBBcnJheSB8IDI3OTkgfAoKLS0tCgojIDUuIENvdW50aW5nIFdpbmRvdyBQYXR0ZXJuCgojIyBSZWNvZ25pdGlvbgoKVXNlIHdoZW4gYXNrZWQgdG86CgoqIGNvdW50IHN1YmFycmF5cwoqIGNvdW50IHN1YnN0cmluZ3MKKiB0b3RhbCB2YWxpZCB3aW5kb3dzCgojIyBLZXkgSW5zaWdodAoKSWYgd2luZG93IFtp4oCmal0gaXMgdmFsaWQsCnRoZW4gYWxsIHN1YmFycmF5cyBlbmRpbmcgYXQgaiBhbmQgc3RhcnRpbmcgZnJvbSBpIHRvIGogYXJlIHZhbGlkLgoKQ29udHJpYnV0aW9uOgoKYGBgdGV4dAooaiAtIGkgKyAxKQpgYGAKCiMjIFRlbXBsYXRlCgpgYGBjcHAKYW5zICs9IChqIC0gaSArIDEpOwpgYGAKCiMjIFJlbGV2YW50IExlZXRDb2RlIFByb2JsZW1zCgojIyMgQmVnaW5uZXIKCnwgUHJvYmxlbSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8IExDICAgfAp8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gfCAtLS0tIHwKfCBOdW1iZXIgb2YgU3Vic3RyaW5ncyBDb250YWluaW5nIEFsbCBUaHJlZSBDaGFyYWN0ZXJzIHwgMTM1OCB8CgojIyMgSW50ZXJtZWRpYXRlCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgICB8IExDICAgfAp8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB8IC0tLS0gfAp8IEJpbmFyeSBTdWJhcnJheXMgV2l0aCBTdW0gICAgICB8IDkzMCAgfAp8IENvdW50IE51bWJlciBvZiBOaWNlIFN1YmFycmF5cyB8IDEyNDggfAoKIyMjIEFkdmFuY2VkCgp8IFByb2JsZW0gICAgICAgICAgICAgICAgICAgICAgICAgICAgICB8IExDICAgfAp8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB8IC0tLS0gfAp8IFN1YmFycmF5cyB3aXRoIEsgRGlmZmVyZW50IEludGVnZXJzICB8IDk5MiAgfAp8IENvdW50IENvbXBsZXRlIFN1YmFycmF5cyBpbiBhbiBBcnJheSB8IDI3OTkgfAoKLS0tCgojIDYuIFRoZSBFeGFjdGx5IEsgVHJpY2sKCiMjIEZvcm11bGEKCmBgYHRleHQKRXhhY3RseShLKSA9IEF0TW9zdChLKSAtIEF0TW9zdChLLTEpCmBgYAoKIyMgV2h5IEl0IFdvcmtzCgpBdE1vc3QoSykKY29udGFpbnM6CgowLDEsMizigKYsSwoKQXRNb3N0KEstMSkKY29udGFpbnM6CgowLDEsMizigKYsSy0xCgpTdWJ0cmFjdGluZyBnaXZlcyBleGFjdGx5IEsuCgojIyBSZWxldmFudCBQcm9ibGVtcwoKfCBQcm9ibGVtICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCBMQyAgIHwKfCAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0gfCAtLS0tIHwKfCBCaW5hcnkgU3ViYXJyYXlzIFdpdGggU3VtICAgICAgICAgICAgfCA5MzAgIHwKfCBDb3VudCBOdW1iZXIgb2YgTmljZSBTdWJhcnJheXMgICAgICAgfCAxMjQ4IHwKfCBTdWJhcnJheXMgd2l0aCBLIERpZmZlcmVudCBJbnRlZ2VycyAgfCA5OTIgIHwKfCBDb3VudCBDb21wbGV0ZSBTdWJhcnJheXMgaW4gYW4gQXJyYXkgfCAyNzk5IHwKCi0tLQoKIyA3LiBNb25vdG9uaWMgRGVxdWUgV2luZG93CgojIyBSZWNvZ25pdGlvbgoKVXNlIHdoZW4gcHJvYmxlbSBhc2tzOgoKKiBtYXhpbXVtIGluIGV2ZXJ5IHdpbmRvdwoqIG1pbmltdW0gaW4gZXZlcnkgd2luZG93CiogbWFpbnRhaW4gbWluL21heCBkeW5hbWljYWxseQoKIyMgRGF0YSBTdHJ1Y3R1cmUKCkRlcXVlLgoKIyMgQ29yZSBJZGVhCgpSZW1vdmUgdXNlbGVzcyBzbWFsbGVyIGVsZW1lbnRzLgpGcm9udCBhbHdheXMgc3RvcmVzIGJlc3QgY2FuZGlkYXRlLgoKIyMgVGVtcGxhdGUKCmBgYGNwcAp3aGlsZSAoIWRxLmVtcHR5KCkgJiYgbnVtc1tkcS5iYWNrKCldIDwgbnVtc1tpXSkKICAgIGRxLnBvcF9iYWNrKCk7CmBgYAoKIyMgUmVsZXZhbnQgTGVldENvZGUgUHJvYmxlbXMKCiMjIyBCZWdpbm5lcgoKfCBQcm9ibGVtICAgICAgICAgICAgICAgIHwgTEMgIHwKfCAtLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHwgLS0tIHwKfCBTbGlkaW5nIFdpbmRvdyBNYXhpbXVtIHwgMjM5IHwKCiMjIyBJbnRlcm1lZGlhdGUKCnwgUHJvYmxlbSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgTEMgICB8CnwgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHwgLS0tLSB8CnwgTG9uZ2VzdCBDb250aW51b3VzIFN1YmFycmF5IFdpdGggQWJzb2x1dGUgRGlmZiDiiaQgTGltaXQgfCAxNDM4IHwKCiMjIyBBZHZhbmNlZAoKfCBQcm9ibGVtICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgIHwgTEMgICB8CnwgLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLSB8IC0tLS0gfAp8IENvbnN0cmFpbmVkIFN1YnNlcXVlbmNlIFN1bSAgICAgICAgICAgfCAxNDI1IHwKfCBKdW1wIEdhbWUgVkkgICAgICAgICAgICAgICAgICAgICAgICAgIHwgMTY5NiB8CnwgU2hvcnRlc3QgU3ViYXJyYXkgd2l0aCBTdW0gYXQgTGVhc3QgSyB8IDg2MiAgfAoKLS0tCgojIDguIFR3by1TdHJpbmcgU2xpZGluZyBXaW5kb3cKCiMjIFJlY29nbml0aW9uCgpPbmUgc3RyaW5nIGRlZmluZXMgcmVxdWlyZW1lbnQuCldpbmRvdyBtb3ZlcyBvbiBhbm90aGVyIHN0cmluZy4KCiMjIENvcmUgUHJvYmxlbXMKCnwgUHJvYmxlbSAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgfCBMQyAgfAp8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tIHwgLS0tIHwKfCBNaW5pbXVtIFdpbmRvdyBTdWJzdHJpbmcgICAgICAgICAgICAgICAgICB8IDc2ICB8CnwgUGVybXV0YXRpb24gaW4gU3RyaW5nICAgICAgICAgICAgICAgICAgICAgfCA1NjcgfAp8IEZpbmQgQWxsIEFuYWdyYW1zIGluIGEgU3RyaW5nICAgICAgICAgICAgIHwgNDM4IHwKfCBTdWJzdHJpbmcgd2l0aCBDb25jYXRlbmF0aW9uIG9mIEFsbCBXb3JkcyB8IDMwICB8CgotLS0KCiMgOS4gUmVjb21tZW5kZWQgTGVhcm5pbmcgT3JkZXIKCiMjIFBoYXNlIDEg4oCUIEZpeGVkIFdpbmRvdyBCYXNpY3MKCjEuIExDIDY0MwoyLiBMQyAxNDU2CjMuIExDIDEzNDMKNC4gTEMgNDM4CgotLS0KCiMjIFBoYXNlIDIg4oCUIExvbmdlc3QgVmFyaWFibGUgV2luZG93Cgo1LiBMQyAzCjYuIExDIDkwNAo3LiBMQyAxMDA0CjguIExDIDQyNAoKLS0tCgojIyBQaGFzZSAzIOKAlCBTaG9ydGVzdCBXaW5kb3cKCjkuIExDIDIwOQoxMC4gTEMgNzYKMTEuIExDIDE2NTgKCi0tLQoKIyMgUGhhc2UgNCDigJQgQ291bnRpbmcgKyBFeGFjdGx5IEsKCjEyLiBMQyA5MzAKMTMuIExDIDEyNDgKMTQuIExDIDk5MgoxNS4gTEMgMTM1OAoKLS0tCgojIyBQaGFzZSA1IOKAlCBNb25vdG9uaWMgUXVldWUKCjE2LiBMQyAyMzkKMTcuIExDIDE0MzgKMTguIExDIDg2MgoKLS0tCgojIDEwLiBGaW5hbCBQYXR0ZXJuIFJlY29nbml0aW9uIENoZWF0IFNoZWV0Cgp8IEtleXdvcmQgICAgICAgICAgIHwgUGF0dGVybiAgICAgICAgICAgICAgIHwKfCAtLS0tLS0tLS0tLS0tLS0tLSB8IC0tLS0tLS0tLS0tLS0tLS0tLS0tLSB8Cnwgc2l6ZSBLICAgICAgICAgICAgfCBGaXhlZCBXaW5kb3cgICAgICAgICAgfAp8IGxvbmdlc3QgICAgICAgICAgIHwgVmFyaWFibGUgTG9uZ2VzdCAgICAgIHwKfCBzaG9ydGVzdCAgICAgICAgICB8IFZhcmlhYmxlIFNob3J0ZXN0ICAgICB8CnwgZGlzdGluY3QgY2hhcnMgICAgfCBIYXNoTWFwIFdpbmRvdyAgICAgICAgfAp8IGNvdW50IHN1YmFycmF5cyAgIHwgQ291bnRpbmcgV2luZG93ICAgICAgIHwKfCBleGFjdGx5IEsgICAgICAgICB8IEF0TW9zdChLKS1BdE1vc3QoSy0xKSB8CnwgbWF4L21pbiBpbiB3aW5kb3cgfCBNb25vdG9uaWMgRGVxdWUgICAgICAgfAp8IHRhcmdldCBzdHJpbmcgICAgIHwgVHdvLVN0cmluZyBXaW5kb3cgICAgIHwKCi0tLQoKIyBGaW5hbCBNZW50YWwgTW9kZWwKCmBgYHRleHQKRXhwYW5kIHJpZ2h0LgpTaHJpbmsgbGVmdCB3aGVuIGludmFsaWQuClJlY29yZCBhbnN3ZXIgYXQgY29ycmVjdCBtb21lbnQuCmBgYAoKTW9zdCBzbGlkaW5nIHdpbmRvdyBwcm9ibGVtcyBhcmUganVzdCB2YXJpYXRpb25zIG9mIHRoaXMgc2FtZSBmcmFtZXdvcmsu -->
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sliding Window Master Guide + LeetCode Pattern Sheet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#0c0a09;color:#faf5f0;
+  font-family:'Inter',system-ui,sans-serif;
+  line-height:1.7;-webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 50% 40% at 75% 5%,rgba(249,115,22,.05),transparent 70%),
+    radial-gradient(ellipse 40% 50% at 15% 85%,rgba(239,68,68,.03),transparent 70%);
+}
+article{
+  position:relative;max-width:780px;margin:0 auto;
+  padding:3rem 2rem 5rem;
+}
+h1{font-size:2.2rem;font-weight:800;letter-spacing:-.04em;line-height:1.15;margin:2rem 0 1rem;color:#faf5f0}
+h2{font-size:1.5rem;font-weight:700;letter-spacing:-.03em;line-height:1.25;margin:2.5rem 0 .75rem;padding-bottom:.5rem;border-bottom:1px solid rgba(255,255,255,.06);color:#faf5f0}
+h3{font-size:1.15rem;font-weight:700;letter-spacing:-.02em;margin:2rem 0 .5rem;color:#e7ddd4}
+h4{font-size:1rem;font-weight:600;margin:1.5rem 0 .4rem;color:#e7ddd4}
+h5,h6{font-size:.88rem;font-weight:600;margin:1.25rem 0 .35rem;color:#8c7e73;text-transform:uppercase;letter-spacing:.04em}
+p{margin:.75rem 0;color:#d4cac0;font-size:.95rem}
+a{color:#fb923c;text-decoration:none;border-bottom:1px solid rgba(251,146,60,.25);transition:border-color .2s}
+a:hover{border-color:#fb923c}
+strong{color:#faf5f0;font-weight:600}
+em{color:#e7ddd4;font-style:italic}
+
+ul,ol{margin:.75rem 0;padding-left:1.75rem;color:#d4cac0}
+li{margin:.3rem 0;font-size:.95rem}
+li::marker{color:#6b5e54}
+
+blockquote{
+  margin:1.25rem 0;padding:.85rem 1.25rem;
+  border-left:3px solid #f97316;
+  background:rgba(249,115,22,.04);border-radius:0 8px 8px 0;
+  color:#d4cac0;font-size:.92rem;
+}
+blockquote p{margin:.25rem 0;color:inherit}
+
+code{
+  font-family:'JetBrains Mono',monospace;font-size:.85em;
+  background:#1a1412;border:1px solid rgba(255,255,255,.06);
+  border-radius:5px;padding:.15rem .4rem;color:#fb923c;
+}
+pre{
+  margin:1.25rem 0;padding:1.25rem 1.5rem;
+  background:#1a1412;border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;overflow-x:auto;
+  line-height:1.55;
+}
+pre code{
+  background:none;border:none;padding:0;
+  color:#e7ddd4;font-size:.84rem;
+}
+
+table{
+  width:100%;margin:1.25rem 0;border-collapse:collapse;
+  font-size:.88rem;
+}
+thead{border-bottom:2px solid rgba(255,255,255,.08)}
+th{text-align:left;padding:.6rem .85rem;font-weight:600;color:#faf5f0;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+td{padding:.55rem .85rem;border-bottom:1px solid rgba(255,255,255,.04);color:#d4cac0}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+img{max-width:100%;height:auto;border-radius:10px;margin:1.25rem 0;border:1px solid rgba(255,255,255,.06)}
+hr{border:none;border-top:1px solid rgba(255,255,255,.06);margin:2rem 0}
+
+input[type=checkbox]{margin-right:.5rem;accent-color:#f97316}
+
+@media(max-width:640px){
+  article{padding:2rem 1rem 3rem}
+  h1{font-size:1.6rem}
+  h2{font-size:1.25rem}
+}
+</style>
+</head>
+<body>
+<article>
+<h1>Sliding Window Master Guide + LeetCode Pattern Sheet</h1>
+<p>This version maps each sliding window pattern to the most relevant LeetCode questions so you can practice pattern recognition systematically.</p>
+<hr>
+<h1>1. Fixed Size Sliding Window</h1>
+<h2>Recognition</h2>
+<p>Use when:</p>
+<ul>
+<li>window size K is fixed</li>
+<li>“subarray of size K”</li>
+<li>“K consecutive elements”</li>
+<li>fixed-length substring</li>
+</ul>
+<h2>Core Idea</h2>
+<p>Add right element.
+Remove left element.
+Maintain exact size K.</p>
+<h2>Template</h2>
+<pre><code class="language-cpp">int i = 0, j = 0;
+
+while (j &lt; n)
+{
+    add(arr[j]);
+
+    if (j - i + 1 &lt; k)
+    {
+        j++;
+    }
+    else if (j - i + 1 == k)
+    {
+        process();
+
+        remove(arr[i]);
+        i++;
+        j++;
+    }
+}
+</code></pre>
+<h2>Relevant LeetCode Problems</h2>
+<h3>Beginner</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Maximum Average Subarray I</td>
+<td>643</td>
+</tr>
+<tr>
+<td>Maximum Number of Vowels in a Substring of Given Length</td>
+<td>1456</td>
+</tr>
+<tr>
+<td>Number of Sub-arrays of Size K and Average ≥ Threshold</td>
+<td>1343</td>
+</tr>
+<tr>
+<td>Substrings of Size Three with Distinct Characters</td>
+<td>1876</td>
+</tr>
+</tbody></table>
+<h3>Intermediate</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Find All Anagrams in a String</td>
+<td>438</td>
+</tr>
+<tr>
+<td>Defuse the Bomb</td>
+<td>1652</td>
+</tr>
+<tr>
+<td>Grumpy Bookstore Owner</td>
+<td>1052</td>
+</tr>
+<tr>
+<td>K Radius Subarray Averages</td>
+<td>2090</td>
+</tr>
+</tbody></table>
+<h3>Advanced</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sliding Window Median</td>
+<td>480</td>
+</tr>
+<tr>
+<td>Substring with Concatenation of All Words</td>
+<td>30</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>2. Variable Window — Longest Pattern</h1>
+<h2>Recognition</h2>
+<p>Use when problem asks:</p>
+<ul>
+<li>longest</li>
+<li>maximum length</li>
+<li>at most K</li>
+<li>largest valid window</li>
+</ul>
+<h2>Core Idea</h2>
+<p>Expand aggressively.
+Shrink only when invalid.</p>
+<h2>Template</h2>
+<pre><code class="language-cpp">int i = 0;
+
+for (int j = 0; j &lt; n; j++)
+{
+    add(arr[j]);
+
+    while (invalid)
+    {
+        remove(arr[i]);
+        i++;
+    }
+
+    ans = max(ans, j - i + 1);
+}
+</code></pre>
+<h2>Relevant LeetCode Problems</h2>
+<h3>Beginner</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Longest Substring Without Repeating Characters</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Fruit Into Baskets</td>
+<td>904</td>
+</tr>
+</tbody></table>
+<h3>Intermediate</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Max Consecutive Ones III</td>
+<td>1004</td>
+</tr>
+<tr>
+<td>Longest Repeating Character Replacement</td>
+<td>424</td>
+</tr>
+<tr>
+<td>Longest Substring with At Most Two Distinct Characters</td>
+<td>159</td>
+</tr>
+<tr>
+<td>Longest Substring with At Most K Distinct Characters</td>
+<td>340</td>
+</tr>
+<tr>
+<td>Get Equal Substrings Within Budget</td>
+<td>1208</td>
+</tr>
+<tr>
+<td>Maximum Erasure Value</td>
+<td>1695</td>
+</tr>
+</tbody></table>
+<h3>Advanced</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Frequency of the Most Frequent Element</td>
+<td>1838</td>
+</tr>
+<tr>
+<td>Longest Nice Subarray</td>
+<td>2401</td>
+</tr>
+<tr>
+<td>Take K of Each Character From Left and Right</td>
+<td>2516</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>3. Variable Window — Shortest Pattern</h1>
+<h2>Recognition</h2>
+<p>Use when problem asks:</p>
+<ul>
+<li>minimum</li>
+<li>shortest</li>
+<li>smallest window</li>
+</ul>
+<h2>Core Idea</h2>
+<p>Expand until valid.
+Then shrink as much as possible.</p>
+<h2>Template</h2>
+<pre><code class="language-cpp">int i = 0;
+
+for (int j = 0; j &lt; n; j++)
+{
+    add(arr[j]);
+
+    while (valid)
+    {
+        ans = min(ans, j - i + 1);
+
+        remove(arr[i]);
+        i++;
+    }
+}
+</code></pre>
+<h2>Relevant LeetCode Problems</h2>
+<h3>Beginner</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Minimum Size Subarray Sum</td>
+<td>209</td>
+</tr>
+</tbody></table>
+<h3>Intermediate</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Minimum Window Substring</td>
+<td>76</td>
+</tr>
+<tr>
+<td>Minimum Consecutive Cards to Pick Up</td>
+<td>2260</td>
+</tr>
+<tr>
+<td>Minimum Operations to Reduce X to Zero</td>
+<td>1658</td>
+</tr>
+</tbody></table>
+<h3>Advanced</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Shortest Subarray with Sum at Least K</td>
+<td>862</td>
+</tr>
+<tr>
+<td>Minimum Window Subsequence</td>
+<td>727</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>4. HashMap / Frequency Sliding Window</h1>
+<h2>Recognition</h2>
+<p>Use when problem involves:</p>
+<ul>
+<li>duplicates</li>
+<li>distinct characters</li>
+<li>frequencies</li>
+<li>occurrences</li>
+<li>counts</li>
+</ul>
+<h2>Data Structures</h2>
+<ul>
+<li>unordered_map</li>
+<li>map</li>
+<li>frequency array</li>
+<li>unordered_set</li>
+</ul>
+<h2>Template</h2>
+<pre><code class="language-cpp">unordered_map&lt;char,int&gt; mp;
+
+for (int j = 0; j &lt; n; j++)
+{
+    mp[s[j]]++;
+
+    while (invalid)
+    {
+        mp[s[i]]--;
+
+        if (mp[s[i]] == 0)
+            mp.erase(s[i]);
+
+        i++;
+    }
+}
+</code></pre>
+<h2>Relevant LeetCode Problems</h2>
+<h3>Beginner</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Longest Substring Without Repeating Characters</td>
+<td>3</td>
+</tr>
+<tr>
+<td>Find All Anagrams in a String</td>
+<td>438</td>
+</tr>
+</tbody></table>
+<h3>Intermediate</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Permutation in String</td>
+<td>567</td>
+</tr>
+<tr>
+<td>Longest Repeating Character Replacement</td>
+<td>424</td>
+</tr>
+<tr>
+<td>Longest Substring with At Most K Distinct Characters</td>
+<td>340</td>
+</tr>
+<tr>
+<td>Minimum Window Substring</td>
+<td>76</td>
+</tr>
+</tbody></table>
+<h3>Advanced</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Subarrays with K Different Integers</td>
+<td>992</td>
+</tr>
+<tr>
+<td>Count Complete Subarrays in an Array</td>
+<td>2799</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>5. Counting Window Pattern</h1>
+<h2>Recognition</h2>
+<p>Use when asked to:</p>
+<ul>
+<li>count subarrays</li>
+<li>count substrings</li>
+<li>total valid windows</li>
+</ul>
+<h2>Key Insight</h2>
+<p>If window [i…j] is valid,
+then all subarrays ending at j and starting from i to j are valid.</p>
+<p>Contribution:</p>
+<pre><code class="language-text">(j - i + 1)
+</code></pre>
+<h2>Template</h2>
+<pre><code class="language-cpp">ans += (j - i + 1);
+</code></pre>
+<h2>Relevant LeetCode Problems</h2>
+<h3>Beginner</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Number of Substrings Containing All Three Characters</td>
+<td>1358</td>
+</tr>
+</tbody></table>
+<h3>Intermediate</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Binary Subarrays With Sum</td>
+<td>930</td>
+</tr>
+<tr>
+<td>Count Number of Nice Subarrays</td>
+<td>1248</td>
+</tr>
+</tbody></table>
+<h3>Advanced</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Subarrays with K Different Integers</td>
+<td>992</td>
+</tr>
+<tr>
+<td>Count Complete Subarrays in an Array</td>
+<td>2799</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>6. The Exactly K Trick</h1>
+<h2>Formula</h2>
+<pre><code class="language-text">Exactly(K) = AtMost(K) - AtMost(K-1)
+</code></pre>
+<h2>Why It Works</h2>
+<p>AtMost(K)
+contains:</p>
+<p>0,1,2,…,K</p>
+<p>AtMost(K-1)
+contains:</p>
+<p>0,1,2,…,K-1</p>
+<p>Subtracting gives exactly K.</p>
+<h2>Relevant Problems</h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Binary Subarrays With Sum</td>
+<td>930</td>
+</tr>
+<tr>
+<td>Count Number of Nice Subarrays</td>
+<td>1248</td>
+</tr>
+<tr>
+<td>Subarrays with K Different Integers</td>
+<td>992</td>
+</tr>
+<tr>
+<td>Count Complete Subarrays in an Array</td>
+<td>2799</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>7. Monotonic Deque Window</h1>
+<h2>Recognition</h2>
+<p>Use when problem asks:</p>
+<ul>
+<li>maximum in every window</li>
+<li>minimum in every window</li>
+<li>maintain min/max dynamically</li>
+</ul>
+<h2>Data Structure</h2>
+<p>Deque.</p>
+<h2>Core Idea</h2>
+<p>Remove useless smaller elements.
+Front always stores best candidate.</p>
+<h2>Template</h2>
+<pre><code class="language-cpp">while (!dq.empty() &amp;&amp; nums[dq.back()] &lt; nums[i])
+    dq.pop_back();
+</code></pre>
+<h2>Relevant LeetCode Problems</h2>
+<h3>Beginner</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Sliding Window Maximum</td>
+<td>239</td>
+</tr>
+</tbody></table>
+<h3>Intermediate</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Longest Continuous Subarray With Absolute Diff ≤ Limit</td>
+<td>1438</td>
+</tr>
+</tbody></table>
+<h3>Advanced</h3>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Constrained Subsequence Sum</td>
+<td>1425</td>
+</tr>
+<tr>
+<td>Jump Game VI</td>
+<td>1696</td>
+</tr>
+<tr>
+<td>Shortest Subarray with Sum at Least K</td>
+<td>862</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>8. Two-String Sliding Window</h1>
+<h2>Recognition</h2>
+<p>One string defines requirement.
+Window moves on another string.</p>
+<h2>Core Problems</h2>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>LC</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Minimum Window Substring</td>
+<td>76</td>
+</tr>
+<tr>
+<td>Permutation in String</td>
+<td>567</td>
+</tr>
+<tr>
+<td>Find All Anagrams in a String</td>
+<td>438</td>
+</tr>
+<tr>
+<td>Substring with Concatenation of All Words</td>
+<td>30</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>9. Recommended Learning Order</h1>
+<h2>Phase 1 — Fixed Window Basics</h2>
+<ol>
+<li>LC 643</li>
+<li>LC 1456</li>
+<li>LC 1343</li>
+<li>LC 438</li>
+</ol>
+<hr>
+<h2>Phase 2 — Longest Variable Window</h2>
+<ol start="5">
+<li>LC 3</li>
+<li>LC 904</li>
+<li>LC 1004</li>
+<li>LC 424</li>
+</ol>
+<hr>
+<h2>Phase 3 — Shortest Window</h2>
+<ol start="9">
+<li>LC 209</li>
+<li>LC 76</li>
+<li>LC 1658</li>
+</ol>
+<hr>
+<h2>Phase 4 — Counting + Exactly K</h2>
+<ol start="12">
+<li>LC 930</li>
+<li>LC 1248</li>
+<li>LC 992</li>
+<li>LC 1358</li>
+</ol>
+<hr>
+<h2>Phase 5 — Monotonic Queue</h2>
+<ol start="16">
+<li>LC 239</li>
+<li>LC 1438</li>
+<li>LC 862</li>
+</ol>
+<hr>
+<h1>10. Final Pattern Recognition Cheat Sheet</h1>
+<table>
+<thead>
+<tr>
+<th>Keyword</th>
+<th>Pattern</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>size K</td>
+<td>Fixed Window</td>
+</tr>
+<tr>
+<td>longest</td>
+<td>Variable Longest</td>
+</tr>
+<tr>
+<td>shortest</td>
+<td>Variable Shortest</td>
+</tr>
+<tr>
+<td>distinct chars</td>
+<td>HashMap Window</td>
+</tr>
+<tr>
+<td>count subarrays</td>
+<td>Counting Window</td>
+</tr>
+<tr>
+<td>exactly K</td>
+<td>AtMost(K)-AtMost(K-1)</td>
+</tr>
+<tr>
+<td>max/min in window</td>
+<td>Monotonic Deque</td>
+</tr>
+<tr>
+<td>target string</td>
+<td>Two-String Window</td>
+</tr>
+</tbody></table>
+<hr>
+<h1>Final Mental Model</h1>
+<pre><code class="language-text">Expand right.
+Shrink left when invalid.
+Record answer at correct moment.
+</code></pre>
+<p>Most sliding window problems are just variations of this same framework.</p>
+
+</article>
+</body>
+</html>

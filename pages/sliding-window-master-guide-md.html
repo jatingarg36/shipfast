@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<!-- page-type:md -->
+<!-- md-source:IyBTbGlkaW5nIFdpbmRvdyBNYXN0ZXIgR3VpZGUKCj4gKipDb3JlIE1pbmRzZXQ6KiogRXhwYW5kIHJpZ2h0IOKGkiBTaHJpbmsgbGVmdCB3aGVuIGludmFsaWQg4oaSIFJlY29yZCBhbnN3ZXIgYXQgdGhlIHJpZ2h0IHRpbWUuCgotLS0KCiMjIFRhYmxlIG9mIENvbnRlbnRzCgoxLiBbV2hhdCBJcyBTbGlkaW5nIFdpbmRvdz9dKCMxLXdoYXQtaXMtc2xpZGluZy13aW5kb3cpCjIuIFtIb3cgdG8gSWRlbnRpZnkgYSBTbGlkaW5nIFdpbmRvdyBQcm9ibGVtXSgjMi1ob3ctdG8taWRlbnRpZnktYS1zbGlkaW5nLXdpbmRvdy1wcm9ibGVtKQozLiBbSG93IEl0IFdvcmtzXSgjMy1ob3ctaXQtd29ya3MpCjQuIFtUaGUgRml2ZSBXaW5kb3cgVHlwZXNdKCM0LXRoZS1maXZlLXdpbmRvdy10eXBlcykKICAgLSBbRml4ZWQgU2l6ZV0oIzQxLWZpeGVkLXNpemUtd2luZG93KQogICAtIFtWYXJpYWJsZSDigJQgTG9uZ2VzdF0oIzQyLXZhcmlhYmxlLWxvbmdlc3Qtd2luZG93KQogICAtIFtWYXJpYWJsZSDigJQgU2hvcnRlc3RdKCM0My12YXJpYWJsZS1zaG9ydGVzdC13aW5kb3cpCiAgIC0gW0hhc2hNYXAgLyBGcmVxdWVuY3kgTWFwXSgjNDQtaGFzaG1hcC0tZnJlcXVlbmN5LW1hcC13aW5kb3cpCiAgIC0gW01vbm90b25pYyBEZXF1ZV0oIzQ1LW1vbm90b25pYy1kZXF1ZS13aW5kb3cpCjUuIFtUaGUgIkV4YWN0bHkgSyIgVHJpY2tdKCM1LXRoZS1leGFjdGx5LWstdHJpY2spCjYuIFtRdWljay1SZWZlcmVuY2U6IFdoaWNoIFR5cGUgdG8gVXNlP10oIzYtcXVpY2stcmVmZXJlbmNlLXdoaWNoLXR5cGUtdG8tdXNlKQo3LiBbQ29tbW9uIE1pc3Rha2VzXSgjNy1jb21tb24tbWlzdGFrZXMpCjguIFtDb21wbGV4aXR5XSgjOC1jb21wbGV4aXR5KQo5LiBbUHJvYmxlbSBCYW5rXSgjOS1wcm9ibGVtLWJhbmspCgotLS0KCiMjIDEuIFdoYXQgSXMgU2xpZGluZyBXaW5kb3c/CgpTbGlkaW5nIFdpbmRvdyBpcyBhbiBvcHRpbWl6YXRpb24gdGVjaG5pcXVlIGZvciAqKmNvbnRpZ3VvdXMgc2VxdWVuY2VzKiogb24gbGluZWFyIGRhdGEgc3RydWN0dXJlcyAoYXJyYXlzLCBzdHJpbmdzLCBsaXN0cykuIEluc3RlYWQgb2YgcmVjb21wdXRpbmcgdGhlIHJlc3VsdCBmb3IgZXZlcnkgcG9zc2libGUgc3ViYXJyYXkgd2l0aCBuZXN0ZWQgbG9vcHMsIGEgIndpbmRvdyIgZGVmaW5lZCBieSB0d28gcG9pbnRlcnMgbW92ZXMgYWNyb3NzIHRoZSBkYXRhIOKAlCBhZGRpbmcgZWxlbWVudHMgb24gdGhlIHJpZ2h0IGFuZCByZW1vdmluZyB0aGVtIG9uIHRoZSBsZWZ0LgoKKipDb21wbGV4aXR5IGdhaW46KioKCnwgQnJ1dGUgRm9yY2UgfCBTbGlkaW5nIFdpbmRvdyB8CnwtLS0tLS0tLS0tLS0tfC0tLS0tLS0tLS0tLS0tLXwKfCBPKG7Csikgb3IgTyhuwrMpIHwgTyhuKSB8CgpFdmVyeSBlbGVtZW50IGVudGVycyB0aGUgd2luZG93IG9uY2UgYW5kIGxlYXZlcyBvbmNlIOKGkiDiiYggMm4gb3BlcmF0aW9ucy4KCi0tLQoKIyMgMi4gSG93IHRvIElkZW50aWZ5IGEgU2xpZGluZyBXaW5kb3cgUHJvYmxlbQoKV29yayB0aHJvdWdoIHRoZXNlIHRocmVlIGNoZWNrcyBpbiBvcmRlcjoKCioq4pGgIElzIHRoZSBkYXRhIHN0cnVjdHVyZSBsaW5lYXI/KioKQXJyYXksIHN0cmluZywgb3IgbGlzdC4gSWYgeWVzLCBjb250aW51ZS4KCioq4pGhIEFyZSBjb250aWd1b3VzIGVsZW1lbnRzIGludm9sdmVkPyoqCkxvb2sgZm9yIGtleXdvcmRzOiAqc3ViYXJyYXksIHN1YnN0cmluZywgY29uc2VjdXRpdmUsIGNvbnRpbnVvdXMsIHdpbmRvdywgc2VnbWVudC4qCklmIHllcywgY29udGludWUuCgoqKuKRoiBJcyB0aGVyZSBhbiBvcHRpbWl6YXRpb24gb3IgY291bnRpbmcgZ29hbD8qKgpMb29rIGZvciBrZXl3b3JkczogKmxvbmdlc3QsIHNob3J0ZXN0LCBtYXhpbXVtLCBtaW5pbXVtLCBzdW0sIGF2ZXJhZ2UsIGNvdW50LCBkaXN0aW5jdCwgZXhhY3RseSBLLCBhdCBtb3N0IEssIGNvbnRhaW5zLioKSWYgeWVzIOKGkiBTbGlkaW5nIFdpbmRvdyBpcyB2ZXJ5IGxpa2VseSB0aGUgcmlnaHQgYXBwcm9hY2guCgotLS0KCiMjIDMuIEhvdyBJdCBXb3JrcwoKYGBgClN0YXRlOiAgWyAg4oaQIGkgKGxlZnQpICDCt8K3wrfCt8K3wrfCt8K3ICBqIChyaWdodCkg4oaSICBdCgoxLiBFeHBhbmQ6ICBhYnNvcmIgYXJyW2pdIGludG8gdGhlIHdpbmRvdwoyLiBWYWxpZGF0ZTogY2hlY2sgdGhlIHdpbmRvdyBjb25kaXRpb24KMy4gU2hyaW5rOiAgd2hpbGUgaW52YWxpZCwgcmVtb3ZlIGFycltpXSBhbmQgYWR2YW5jZSBpCjQuIFJlY29yZDogIHVwZGF0ZSBhbnN3ZXIgKG1heCwgbWluLCBjb3VudCwg4oCmKQo1LiBSZXBlYXQ6ICBhZHZhbmNlIGogdW50aWwgZW5kIG9mIGFycmF5CmBgYAoKLS0tCgojIyA0LiBUaGUgRml2ZSBXaW5kb3cgVHlwZXMKCi0tLQoKIyMjIDQuMSBGaXhlZC1TaXplIFdpbmRvdwoKKipXaGVuIHRvIHVzZToqKiBUaGUgd2luZG93IHNpemUgYGtgIGlzIGdpdmVuIGFuZCBuZXZlciBjaGFuZ2VzLgoKKipSZWNvZ25pdGlvbiBrZXl3b3JkczoqKiAic3ViYXJyYXkgb2Ygc2l6ZSBLIiwgIndpbmRvdyBzaXplIEsiLCAiSyBjb25zZWN1dGl2ZSBlbGVtZW50cyIsICJmaXhlZC1sZW5ndGggc3Vic3RyaW5nIgoKKipJZGVhOioqIEFzIGBqYCBhZHZhbmNlcywgYWRkIGBhcnJbal1gOyBvbmNlIHRoZSB3aW5kb3cgcmVhY2hlcyBzaXplIGBrYCwgcmVjb3JkIHRoZSBhbnN3ZXIsIHRoZW4gcmVtb3ZlIGBhcnJbaV1gIGFuZCBzbGlkZSBmb3J3YXJkLgoKKipUZW1wbGF0ZToqKgoKYGBgY3BwCmludCBpID0gMCwgaiA9IDA7Cgp3aGlsZSAoaiA8IG4pIHsKICAgIC8vIDEuIEluY2x1ZGUgYXJyW2pdCiAgICBhZGQoYXJyW2pdKTsKCiAgICBpZiAoaiAtIGkgKyAxIDwgaykgewogICAgICAgIGorKzsKICAgIH0gZWxzZSB7IC8vIHdpbmRvdyA9PSBrCiAgICAgICAgLy8gMi4gUHJvY2VzcyBhbnN3ZXIKICAgICAgICBwcm9jZXNzKCk7CgogICAgICAgIC8vIDMuIFNsaWRlOiByZW1vdmUgbGVmdG1vc3QgZWxlbWVudAogICAgICAgIHJlbW92ZShhcnJbaV0pOwogICAgICAgIGkrKzsKICAgICAgICBqKys7CiAgICB9Cn0KYGBgCgoqKkV4YW1wbGUg4oCUIE1heGltdW0gU3VtIFN1YmFycmF5IG9mIFNpemUgSzoqKgoKYGBgY3BwCmludCBtYXhTdW0odmVjdG9yPGludD4mIGFyciwgaW50IGspIHsKICAgIGludCBpID0gMCwgaiA9IDAsIHN1bSA9IDAsIGFucyA9IElOVF9NSU47CgogICAgd2hpbGUgKGogPCBhcnIuc2l6ZSgpKSB7CiAgICAgICAgc3VtICs9IGFycltqXTsKCiAgICAgICAgaWYgKGogLSBpICsgMSA9PSBrKSB7CiAgICAgICAgICAgIGFucyA9IG1heChhbnMsIHN1bSk7CiAgICAgICAgICAgIHN1bSAtPSBhcnJbaSsrXTsKICAgICAgICB9CiAgICAgICAgaisrOwogICAgfQogICAgcmV0dXJuIGFuczsKfQpgYGAKCioqUHJhY3RpY2UgcHJvYmxlbXM6KioKLSBNYXhpbXVtIEF2ZXJhZ2UgU3ViYXJyYXkgSQotIEZpbmQgQWxsIEFuYWdyYW1zIGluIGEgU3RyaW5nCi0gTWF4aW11bSBWb3dlbHMgaW4gU3Vic3RyaW5nIG9mIExlbmd0aCBLCi0gSyBSYWRpdXMgU3ViYXJyYXkgQXZlcmFnZXMKCi0tLQoKIyMjIDQuMiBWYXJpYWJsZSDigJQgTG9uZ2VzdCBXaW5kb3cKCioqV2hlbiB0byB1c2U6KiogRmluZCB0aGUgKiptYXhpbXVtLWxlbmd0aCoqIHdpbmRvdyBzYXRpc2Z5aW5nIGEgY29uZGl0aW9uLgoKKipSZWNvZ25pdGlvbiBrZXl3b3JkczoqKiAqbG9uZ2VzdCwgbWF4aW11bSBsZW5ndGgsIGF0IG1vc3QgSyoKCioqSWRlYToqKiBFeHBhbmQgYWdncmVzc2l2ZWx5LiBTaHJpbmsgb25seSB3aGVuIHRoZSBjb25kaXRpb24gYnJlYWtzLiBSZWNvcmQgd2luZG93IHNpemUgKiphZnRlcioqIGVhY2ggc2hyaW5rLgoKKipUZW1wbGF0ZToqKgoKYGBgY3BwCmludCBpID0gMCwgYW5zID0gMDsKCmZvciAoaW50IGogPSAwOyBqIDwgbjsgaisrKSB7CiAgICBhZGQoYXJyW2pdKTsgICAgICAgICAgICAgICAgICAgICAvLyBleHBhbmQKCiAgICB3aGlsZSAoaW52YWxpZCgpKSB7ICAgICAgICAgICAgICAvLyBzaHJpbmsgdW50aWwgdmFsaWQKICAgICAgICByZW1vdmUoYXJyW2krK10pOwogICAgfQoKICAgIGFucyA9IG1heChhbnMsIGogLSBpICsgMSk7ICAgICAgIC8vIHJlY29yZCBsb25nZXN0IHZhbGlkIHdpbmRvdwp9CmBgYAoKKipLZXkgcHJvYmxlbXMgYW5kIHRoZWlyIGNvbmRpdGlvbnM6KioKCnwgUHJvYmxlbSB8IFZhbGlkaXR5IENvbmRpdGlvbiB8CnwtLS18LS0tfAp8IExvbmdlc3QgU3Vic3RyaW5nIFdpdGhvdXQgUmVwZWF0aW5nIENoYXJhY3RlcnMgfCBubyBkdXBsaWNhdGUgaW4gd2luZG93IHwKfCBGcnVpdCBJbnRvIEJhc2tldHMgfCBhdCBtb3N0IDIgZGlzdGluY3QgZWxlbWVudHMgfAp8IExvbmdlc3QgUmVwZWF0aW5nIENoYXJhY3RlciBSZXBsYWNlbWVudCB8IGB3aW5kb3dTaXplIC0gbWF4RnJlcSA8PSBrYCB8CnwgTWF4IENvbnNlY3V0aXZlIE9uZXMgSUlJIHwgYXQgbW9zdCBga2AgemVyb3MgYWxsb3dlZCB8CgotLS0KCiMjIyA0LjMgVmFyaWFibGUg4oCUIFNob3J0ZXN0IFdpbmRvdwoKKipXaGVuIHRvIHVzZToqKiBGaW5kIHRoZSAqKm1pbmltdW0tbGVuZ3RoKiogd2luZG93IHNhdGlzZnlpbmcgYSBjb25kaXRpb24uCgoqKlJlY29nbml0aW9uIGtleXdvcmRzOioqICptaW5pbXVtLCBzaG9ydGVzdCwgc21hbGxlc3QqCgoqKklkZWE6KiogRXhwYW5kIHVudGlsIHRoZSBjb25kaXRpb24gaXMgbWV0LiBUaGVuIHNocmluayBhcyBhZ2dyZXNzaXZlbHkgYXMgcG9zc2libGUsIHJlY29yZGluZyB0aGUgYW5zd2VyICoqd2hpbGUqKiB0aGUgd2luZG93IGlzIHN0aWxsIHZhbGlkLgoKKipUZW1wbGF0ZToqKgoKYGBgY3BwCmludCBpID0gMCwgYW5zID0gSU5UX01BWDsKCmZvciAoaW50IGogPSAwOyBqIDwgbjsgaisrKSB7CiAgICBhZGQoYXJyW2pdKTsgICAgICAgICAgICAgICAgICAgICAvLyBleHBhbmQKCiAgICB3aGlsZSAodmFsaWQoKSkgeyAgICAgICAgICAgICAgICAvLyBzaHJpbmsgd2hpbGUgc3RpbGwgdmFsaWQKICAgICAgICBhbnMgPSBtaW4oYW5zLCBqIC0gaSArIDEpOyAgLy8gcmVjb3JkIGluc2lkZSB0aGUgc2hyaW5rIGxvb3AKICAgICAgICByZW1vdmUoYXJyW2krK10pOwogICAgfQp9CmBgYAoKPiDimqDvuI8gKipLZXkgZGlmZmVyZW5jZSBmcm9tIExvbmdlc3Q6KiogVGhlIGFuc3dlciBpcyByZWNvcmRlZCAqaW5zaWRlKiB0aGUgYHdoaWxlICh2YWxpZClgIGxvb3AsIG5vdCBhZnRlciBpdC4KCioqUHJhY3RpY2UgcHJvYmxlbXM6KioKLSBNaW5pbXVtIFdpbmRvdyBTdWJzdHJpbmcKLSBNaW5pbXVtIFNpemUgU3ViYXJyYXkgU3VtCi0gTWluaW11bSBDb25zZWN1dGl2ZSBDYXJkcyB0byBQaWNrIFVwCgotLS0KCiMjIyA0LjQgSGFzaE1hcCAvIEZyZXF1ZW5jeSBNYXAgV2luZG93CgoqKldoZW4gdG8gdXNlOioqIFRoZSBjb25kaXRpb24gZGVwZW5kcyBvbiAqKmZyZXF1ZW5jaWVzLCBkdXBsaWNhdGVzLCBvciBkaXN0aW5jdCBjb3VudHMqKiBpbnNpZGUgdGhlIHdpbmRvdy4KCioqQ29tbW9uIGRhdGEgc3RydWN0dXJlczoqKiBgdW5vcmRlcmVkX21hcGAsIGB2ZWN0b3I8aW50PiBmcmVxWzI1Nl1gCgoqKlRlbXBsYXRlOioqCgpgYGBjcHAKdW5vcmRlcmVkX21hcDxjaGFyLCBpbnQ+IGZyZXE7CmludCBpID0gMCwgYW5zID0gMDsKCmZvciAoaW50IGogPSAwOyBqIDwgbjsgaisrKSB7CiAgICBmcmVxW3Nbal1dKys7ICAgICAgICAgICAgICAgICAgICAgICAgICAvLyBleHBhbmQKCiAgICB3aGlsZSAoaW52YWxpZChmcmVxKSkgeyAgICAgICAgICAgICAgICAvLyBzaHJpbmsKICAgICAgICBmcmVxW3NbaV1dLS07CiAgICAgICAgaWYgKGZyZXFbc1tpXV0gPT0gMCkgZnJlcS5lcmFzZShzW2ldKTsKICAgICAgICBpKys7CiAgICB9CgogICAgYW5zID0gbWF4KGFucywgaiAtIGkgKyAxKTsgICAgICAgICAgICAvLyBvciArPSAoaiAtIGkgKyAxKSBmb3IgY291bnRpbmcKfQpgYGAKCioqUHJhY3RpY2UgcHJvYmxlbXM6KioKLSBMb25nZXN0IFN1YnN0cmluZyBXaXRob3V0IFJlcGVhdGluZyBDaGFyYWN0ZXJzCi0gTG9uZ2VzdCBTdWJzdHJpbmcgd2l0aCBBdCBNb3N0IEsgRGlzdGluY3QgQ2hhcmFjdGVycwotIE1pbmltdW0gV2luZG93IFN1YnN0cmluZwotIFBlcm11dGF0aW9uIGluIFN0cmluZwotIExvbmdlc3QgUmVwZWF0aW5nIENoYXJhY3RlciBSZXBsYWNlbWVudAoKLS0tCgojIyMgNC41IE1vbm90b25pYyBEZXF1ZSBXaW5kb3cKCioqV2hlbiB0byB1c2U6KiogWW91IG5lZWQgdGhlICoqbWF4aW11bSBvciBtaW5pbXVtIGVsZW1lbnQqKiBvZiBldmVyeSB3aW5kb3cgb2Ygc2l6ZSBga2AuCgoqKkRhdGEgc3RydWN0dXJlOioqIGBkZXF1ZTxpbnQ+YCBzdG9yaW5nICoqaW5kaWNlcyoqIGluIG1vbm90b25pY2FsbHkgZGVjcmVhc2luZyAoZm9yIG1heCkgb3IgaW5jcmVhc2luZyAoZm9yIG1pbikgb3JkZXIuCgoqKktleSBpbnNpZ2h0OioqIEVsZW1lbnRzIHRoYXQgY2FuIG5ldmVyIGJlIHRoZSBhbnN3ZXIgYXJlIGRpc2NhcmRlZCBpbW1lZGlhdGVseSwga2VlcGluZyB0aGUgZGVxdWUgbGVhbi4gVGhlIGZyb250IGFsd2F5cyBob2xkcyB0aGUgaW5kZXggb2YgdGhlIGN1cnJlbnQgd2luZG93J3MgbWF4IChvciBtaW4pLgoKKipUZW1wbGF0ZSDigJQgU2xpZGluZyBXaW5kb3cgTWF4aW11bToqKgoKYGBgY3BwCnZlY3RvcjxpbnQ+IG1heFNsaWRpbmdXaW5kb3codmVjdG9yPGludD4mIG51bXMsIGludCBrKSB7CiAgICBkZXF1ZTxpbnQ+IGRxOyAgIC8vIHN0b3JlcyBpbmRpY2VzOyBmcm9udCA9IG1heCBvZiBjdXJyZW50IHdpbmRvdwogICAgdmVjdG9yPGludD4gYW5zOwoKICAgIGZvciAoaW50IGkgPSAwOyBpIDwgbnVtcy5zaXplKCk7IGkrKykgewogICAgICAgIC8vIFJlbW92ZSBpbmRpY2VzIHRoYXQgaGF2ZSBmYWxsZW4gb3V0IG9mIHRoZSB3aW5kb3cKICAgICAgICB3aGlsZSAoIWRxLmVtcHR5KCkgJiYgZHEuZnJvbnQoKSA8PSBpIC0gaykKICAgICAgICAgICAgZHEucG9wX2Zyb250KCk7CgogICAgICAgIC8vIFJlbW92ZSBpbmRpY2VzIHdob3NlIHZhbHVlcyBhcmUgPCBjdXJyZW50ICh0aGV5IGNhbiBuZXZlciBiZSB0aGUgbWF4KQogICAgICAgIHdoaWxlICghZHEuZW1wdHkoKSAmJiBudW1zW2RxLmJhY2soKV0gPCBudW1zW2ldKQogICAgICAgICAgICBkcS5wb3BfYmFjaygpOwoKICAgICAgICBkcS5wdXNoX2JhY2soaSk7CgogICAgICAgIGlmIChpID49IGsgLSAxKQogICAgICAgICAgICBhbnMucHVzaF9iYWNrKG51bXNbZHEuZnJvbnQoKV0pOwogICAgfQogICAgcmV0dXJuIGFuczsKfQpgYGAKCioqUHJhY3RpY2UgcHJvYmxlbXM6KioKLSBTbGlkaW5nIFdpbmRvdyBNYXhpbXVtCi0gTG9uZ2VzdCBDb250aW51b3VzIFN1YmFycmF5IFdpdGggQWJzb2x1dGUgRGlmZiDiiaQgTGltaXQKCi0tLQoKIyMgNS4gVGhlICJFeGFjdGx5IEsiIFRyaWNrCgpQcm9ibGVtcyBhc2tpbmcgZm9yICoqZXhhY3RseSBLKiogZGlzdGluY3QgZWxlbWVudHMgKG9yIHN1bSwgb3Igb2RkIG51bWJlcnMpIGFyZSBkaWZmaWN1bHQgdG8gc29sdmUgZGlyZWN0bHkgd2l0aCBhIHNpbmdsZSBzbGlkaW5nIHdpbmRvdywgYmVjYXVzZSBzaHJpbmtpbmcgYmVjb21lcyBhbWJpZ3VvdXMuCgoqKlRoZSBmb3JtdWxhOioqCgpgYGAKRXhhY3RseShLKSAgPSAgQXRNb3N0KEspICDiiJIgIEF0TW9zdChLIOKIkiAxKQpgYGAKCioqV2h5IGl0IHdvcmtzOioqCgpgYGAKQXRNb3N0KEspICAgY291bnRzIHN1YmFycmF5cyB3aXRoIDAsIDEsIDIsIOKApiwgSyBkaXN0aW5jdCBlbGVtZW50cwpBdE1vc3QoSy0xKSBjb3VudHMgc3ViYXJyYXlzIHdpdGggMCwgMSwgMiwg4oCmLCBLLTEgZGlzdGluY3QgZWxlbWVudHMKRGlmZmVyZW5jZSAgPSBzdWJhcnJheXMgd2l0aCBleGFjdGx5IEsgZGlzdGluY3QgZWxlbWVudHMgIOKckwpgYGAKCkltcGxlbWVudCBgQXRNb3N0KHgpYCB1c2luZyB0aGUgKipDb3VudGluZyB0ZW1wbGF0ZSoqIChTZWN0aW9uIDQuMiAvIDQuMyB2YXJpYW50KSwgdGhlbiBjYWxsIGl0IHR3aWNlLgoKKipQcm9ibGVtcyB0aGF0IHVzZSB0aGlzIHRyaWNrOioqCi0gU3ViYXJyYXlzIHdpdGggSyBEaWZmZXJlbnQgSW50ZWdlcnMKLSBDb3VudCBOdW1iZXIgb2YgTmljZSBTdWJhcnJheXMKLSBCaW5hcnkgU3ViYXJyYXkgU3VtCgotLS0KCiMjIDYuIFF1aWNrLVJlZmVyZW5jZTogV2hpY2ggVHlwZSB0byBVc2U/Cgp8IFNpdHVhdGlvbiB8IFBhdHRlcm4gfAp8LS0tfC0tLXwKfCBXaW5kb3cgc2l6ZSBpcyBnaXZlbiBhcyBLIHwgRml4ZWQgV2luZG93IHwKfCBMb25nZXN0IHNlcXVlbmNlIHNhdGlzZnlpbmcgYSBjb25kaXRpb24gfCBWYXJpYWJsZSDigJQgTG9uZ2VzdCB8CnwgU2hvcnRlc3Qgc2VxdWVuY2Ugc2F0aXNmeWluZyBhIGNvbmRpdGlvbiB8IFZhcmlhYmxlIOKAlCBTaG9ydGVzdCB8CnwgQ29uZGl0aW9uIGludm9sdmVzIGZyZXF1ZW5jaWVzIG9yIGRpc3RpbmN0IGNvdW50cyB8IEhhc2hNYXAgV2luZG93IHwKfCBOZWVkIG1heC9taW4gb2YgZXZlcnkgd2luZG93IHwgTW9ub3RvbmljIERlcXVlIHwKfCBDb3VudCBzdWJhcnJheXMgd2l0aCBhdCBtb3N0IEsgfCBDb3VudGluZyAocmVjb3JkIGBqIC0gaSArIDFgKSB8CnwgQ291bnQgc3ViYXJyYXlzIHdpdGggZXhhY3RseSBLIHwgQXRNb3N0KEspIOKIkiBBdE1vc3QoS+KIkjEpIHwKfCBXaW5kb3cgZGVmaW5lZCBieSBhIHNlY29uZCBzdHJpbmcgfCBUd28tU3RyaW5nIFdpbmRvdyAoSGFzaE1hcCkgfAoKKipDb3VudGluZyBzdWJhcnJheXM6KioKV2hlbiBhIHdpbmRvdyBgW2nigKZqXWAgaXMgdmFsaWQsIGV2ZXJ5IHN1YmFycmF5IGVuZGluZyBhdCBgamAgYW5kIHN0YXJ0aW5nIGFueXdoZXJlIGZyb20gYGlgIHRvIGBqYCBpcyBhbHNvIHZhbGlkIOKAlCBnaXZpbmcgYChqIC0gaSArIDEpYCBuZXcgdmFsaWQgc3ViYXJyYXlzIHRvIGFkZCB0byB0aGUgYW5zd2VyLgoKLS0tCgojIyA3LiBDb21tb24gTWlzdGFrZXMKCioq4pGgIEZvcmdldHRpbmcgdG8gdW5kbyBsZWZ0IGVsZW1lbnQgb24gc2hyaW5rKioKV2hlbiBgaWAgbW92ZXMgcmlnaHQsIHlvdSBtdXN0IHJldmVyc2Ugd2hhdGV2ZXIgeW91IGRpZCB3aGVuIHRoYXQgZWxlbWVudCBlbnRlcmVkOiBkZWNyZW1lbnQgaXRzIGZyZXF1ZW5jeSwgc3VidHJhY3QgZnJvbSBzdW0sIGV0Yy4KCioq4pGhIEluZmluaXRlIGxvb3BzKioKRXZlcnkgaXRlcmF0aW9uIG11c3QgYWR2YW5jZSBlaXRoZXIgYGlgIG9yIGBqYCAob3IgYm90aCkuIElmIG5laXRoZXIgbW92ZXMsIHRoZSBsb29wIGlzIGluZmluaXRlLgoKKirikaIgV3JvbmcgdmFsaWRpdHkgY29uZGl0aW9uKioKQSBjbGFzc2ljIGV4YW1wbGU6IGZvciBMb25nZXN0IFJlcGVhdGluZyBDaGFyYWN0ZXIgUmVwbGFjZW1lbnQsIHRoZSBjb25kaXRpb24gaXM6CmBgYAp3aW5kb3dfc2l6ZSAtIG1heEZyZXEgPD0gayAgICDinJMKYGBgCm5vdCBgbWF4RnJlcSA8PSBrYCDinJcKCioq4pGjIFJlY29yZGluZyB0aGUgYW5zd2VyIGF0IHRoZSB3cm9uZyB0aW1lKioKCnwgR29hbCB8IFdoZW4gdG8gcmVjb3JkIHwKfC0tLXwtLS18CnwgTG9uZ2VzdCB8ICpBZnRlciogdGhlIGlubmVyIHNocmluayBsb29wIHwKfCBTaG9ydGVzdCB8ICpJbnNpZGUqIHRoZSBpbm5lciBzaHJpbmsgbG9vcCAod2hpbGUgc3RpbGwgdmFsaWQpIHwKfCBDb3VudGluZyB8ICpBZnRlciogdGhlIGlubmVyIHNocmluayBsb29wOiBgYW5zICs9IChqIC0gaSArIDEpYCB8CgotLS0KCiMjIDguIENvbXBsZXhpdHkKCkZvciBhbG1vc3QgYWxsIHNsaWRpbmcgd2luZG93IHByb2JsZW1zOgoKfCB8IENvbXBsZXhpdHkgfAp8LS0tfC0tLXwKfCBUaW1lIHwgTyhuKSDigJQgZWFjaCBwb2ludGVyIG1vdmVzIGF0IG1vc3QgbiB0aW1lcyB8CnwgU3BhY2UgfCBPKDEpIGZvciBzdW0vcG9pbnRlciBwcm9ibGVtczsgTyhrKSBvciBPKGFscGhhYmV0KSBmb3IgSGFzaE1hcCB2YXJpYW50cyB8CgotLS0KCiMjIDkuIFByb2JsZW0gQmFuawoKIyMjIEZpeGVkIFdpbmRvdwotIE1heGltdW0gU3VtIFN1YmFycmF5IG9mIFNpemUgSwotIE1heGltdW0gQXZlcmFnZSBTdWJhcnJheSBJICAqKExDIDY0MykqCi0gRmluZCBBbGwgQW5hZ3JhbXMgaW4gYSBTdHJpbmcgICooTEMgNDM4KSoKLSBNYXhpbXVtIFZvd2VscyBpbiBTdWJzdHJpbmcgb2YgTGVuZ3RoIEsgICooTEMgMTQ1NikqCi0gSyBSYWRpdXMgU3ViYXJyYXkgQXZlcmFnZXMgICooTEMgMjA5MCkqCgojIyMgVmFyaWFibGUg4oCUIExvbmdlc3QKLSBMb25nZXN0IFN1YnN0cmluZyBXaXRob3V0IFJlcGVhdGluZyBDaGFyYWN0ZXJzICAqKExDIDMpKgotIEZydWl0IEludG8gQmFza2V0cyAgKihMQyA5MDQpKgotIExvbmdlc3QgUmVwZWF0aW5nIENoYXJhY3RlciBSZXBsYWNlbWVudCAgKihMQyA0MjQpKgotIE1heCBDb25zZWN1dGl2ZSBPbmVzIElJSSAgKihMQyAxMDA0KSoKLSBNYXhpbXVtIEVyYXN1cmUgVmFsdWUgICooTEMgMTY5NSkqCgojIyMgVmFyaWFibGUg4oCUIFNob3J0ZXN0Ci0gTWluaW11bSBXaW5kb3cgU3Vic3RyaW5nICAqKExDIDc2KSoKLSBNaW5pbXVtIFNpemUgU3ViYXJyYXkgU3VtICAqKExDIDIwOSkqCi0gTWluaW11bSBDb25zZWN1dGl2ZSBDYXJkcyB0byBQaWNrIFVwICAqKExDIDIyNjApKgoKIyMjIENvdW50aW5nCi0gQmluYXJ5IFN1YmFycmF5IFN1bSAgKihMQyA5MzApKgotIENvdW50IE51bWJlciBvZiBOaWNlIFN1YmFycmF5cyAgKihMQyAxMjQ4KSoKLSBTdWJhcnJheXMgd2l0aCBLIERpZmZlcmVudCBJbnRlZ2VycyAgKihMQyA5OTIpKgotIE51bWJlciBvZiBTdWJzdHJpbmdzIENvbnRhaW5pbmcgQWxsIFRocmVlIENoYXJhY3RlcnMgICooTEMgMTM1OCkqCgojIyMgTW9ub3RvbmljIERlcXVlCi0gU2xpZGluZyBXaW5kb3cgTWF4aW11bSAgKihMQyAyMzkpKgotIExvbmdlc3QgQ29udGludW91cyBTdWJhcnJheSBXaXRoIEFic29sdXRlIERpZmYg4omkIExpbWl0ICAqKExDIDE0MzgpKgoKLS0tCgoqTWFzdGVyIHRoZSBsb25nZXN0LCBzaG9ydGVzdCwgY291bnRpbmcsIEhhc2hNYXAsIGFuZCBkZXF1ZSBwYXR0ZXJucywgcGx1cyB0aGUgRXhhY3RseSBLIHRyaWNrLCBhbmQgeW91IGNhbiBzb2x2ZSB0aGUgdmFzdCBtYWpvcml0eSBvZiBzbGlkaW5nIHdpbmRvdyBwcm9ibGVtcyBhdCBtZWRpdW0gYW5kIGhhcmQgZGlmZmljdWx0eS4q -->
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Sliding Window Master Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  background:#0c0a09;color:#faf5f0;
+  font-family:'Inter',system-ui,sans-serif;
+  line-height:1.7;-webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:'';position:fixed;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 50% 40% at 75% 5%,rgba(249,115,22,.05),transparent 70%),
+    radial-gradient(ellipse 40% 50% at 15% 85%,rgba(239,68,68,.03),transparent 70%);
+}
+article{
+  position:relative;max-width:780px;margin:0 auto;
+  padding:3rem 2rem 5rem;
+}
+h1{font-size:2.2rem;font-weight:800;letter-spacing:-.04em;line-height:1.15;margin:2rem 0 1rem;color:#faf5f0}
+h2{font-size:1.5rem;font-weight:700;letter-spacing:-.03em;line-height:1.25;margin:2.5rem 0 .75rem;padding-bottom:.5rem;border-bottom:1px solid rgba(255,255,255,.06);color:#faf5f0}
+h3{font-size:1.15rem;font-weight:700;letter-spacing:-.02em;margin:2rem 0 .5rem;color:#e7ddd4}
+h4{font-size:1rem;font-weight:600;margin:1.5rem 0 .4rem;color:#e7ddd4}
+h5,h6{font-size:.88rem;font-weight:600;margin:1.25rem 0 .35rem;color:#8c7e73;text-transform:uppercase;letter-spacing:.04em}
+p{margin:.75rem 0;color:#d4cac0;font-size:.95rem}
+a{color:#fb923c;text-decoration:none;border-bottom:1px solid rgba(251,146,60,.25);transition:border-color .2s}
+a:hover{border-color:#fb923c}
+strong{color:#faf5f0;font-weight:600}
+em{color:#e7ddd4;font-style:italic}
+
+ul,ol{margin:.75rem 0;padding-left:1.75rem;color:#d4cac0}
+li{margin:.3rem 0;font-size:.95rem}
+li::marker{color:#6b5e54}
+
+blockquote{
+  margin:1.25rem 0;padding:.85rem 1.25rem;
+  border-left:3px solid #f97316;
+  background:rgba(249,115,22,.04);border-radius:0 8px 8px 0;
+  color:#d4cac0;font-size:.92rem;
+}
+blockquote p{margin:.25rem 0;color:inherit}
+
+code{
+  font-family:'JetBrains Mono',monospace;font-size:.85em;
+  background:#1a1412;border:1px solid rgba(255,255,255,.06);
+  border-radius:5px;padding:.15rem .4rem;color:#fb923c;
+}
+pre{
+  margin:1.25rem 0;padding:1.25rem 1.5rem;
+  background:#1a1412;border:1px solid rgba(255,255,255,.06);
+  border-radius:10px;overflow-x:auto;
+  line-height:1.55;
+}
+pre code{
+  background:none;border:none;padding:0;
+  color:#e7ddd4;font-size:.84rem;
+}
+
+table{
+  width:100%;margin:1.25rem 0;border-collapse:collapse;
+  font-size:.88rem;
+}
+thead{border-bottom:2px solid rgba(255,255,255,.08)}
+th{text-align:left;padding:.6rem .85rem;font-weight:600;color:#faf5f0;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em}
+td{padding:.55rem .85rem;border-bottom:1px solid rgba(255,255,255,.04);color:#d4cac0}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+img{max-width:100%;height:auto;border-radius:10px;margin:1.25rem 0;border:1px solid rgba(255,255,255,.06)}
+hr{border:none;border-top:1px solid rgba(255,255,255,.06);margin:2rem 0}
+
+input[type=checkbox]{margin-right:.5rem;accent-color:#f97316}
+
+@media(max-width:640px){
+  article{padding:2rem 1rem 3rem}
+  h1{font-size:1.6rem}
+  h2{font-size:1.25rem}
+}
+</style>
+</head>
+<body>
+<article>
+<h1>Sliding Window Master Guide</h1>
+<blockquote>
+<p><strong>Core Mindset:</strong> Expand right → Shrink left when invalid → Record answer at the right time.</p>
+</blockquote>
+<hr>
+<h2>Table of Contents</h2>
+<ol>
+<li><a href="#1-what-is-sliding-window">What Is Sliding Window?</a></li>
+<li><a href="#2-how-to-identify-a-sliding-window-problem">How to Identify a Sliding Window Problem</a></li>
+<li><a href="#3-how-it-works">How It Works</a></li>
+<li><a href="#4-the-five-window-types">The Five Window Types</a><ul>
+<li><a href="#41-fixed-size-window">Fixed Size</a></li>
+<li><a href="#42-variable-longest-window">Variable — Longest</a></li>
+<li><a href="#43-variable-shortest-window">Variable — Shortest</a></li>
+<li><a href="#44-hashmap--frequency-map-window">HashMap / Frequency Map</a></li>
+<li><a href="#45-monotonic-deque-window">Monotonic Deque</a></li>
+</ul>
+</li>
+<li><a href="#5-the-exactly-k-trick">The &quot;Exactly K&quot; Trick</a></li>
+<li><a href="#6-quick-reference-which-type-to-use">Quick-Reference: Which Type to Use?</a></li>
+<li><a href="#7-common-mistakes">Common Mistakes</a></li>
+<li><a href="#8-complexity">Complexity</a></li>
+<li><a href="#9-problem-bank">Problem Bank</a></li>
+</ol>
+<hr>
+<h2>1. What Is Sliding Window?</h2>
+<p>Sliding Window is an optimization technique for <strong>contiguous sequences</strong> on linear data structures (arrays, strings, lists). Instead of recomputing the result for every possible subarray with nested loops, a &quot;window&quot; defined by two pointers moves across the data — adding elements on the right and removing them on the left.</p>
+<p><strong>Complexity gain:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Brute Force</th>
+<th>Sliding Window</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>O(n²) or O(n³)</td>
+<td>O(n)</td>
+</tr>
+</tbody></table>
+<p>Every element enters the window once and leaves once → ≈ 2n operations.</p>
+<hr>
+<h2>2. How to Identify a Sliding Window Problem</h2>
+<p>Work through these three checks in order:</p>
+<p><strong>① Is the data structure linear?</strong>
+Array, string, or list. If yes, continue.</p>
+<p><strong>② Are contiguous elements involved?</strong>
+Look for keywords: <em>subarray, substring, consecutive, continuous, window, segment.</em>
+If yes, continue.</p>
+<p><strong>③ Is there an optimization or counting goal?</strong>
+Look for keywords: <em>longest, shortest, maximum, minimum, sum, average, count, distinct, exactly K, at most K, contains.</em>
+If yes → Sliding Window is very likely the right approach.</p>
+<hr>
+<h2>3. How It Works</h2>
+<pre><code>State:  [  ← i (left)  ········  j (right) →  ]
+
+1. Expand:  absorb arr[j] into the window
+2. Validate: check the window condition
+3. Shrink:  while invalid, remove arr[i] and advance i
+4. Record:  update answer (max, min, count, …)
+5. Repeat:  advance j until end of array
+</code></pre>
+<hr>
+<h2>4. The Five Window Types</h2>
+<hr>
+<h3>4.1 Fixed-Size Window</h3>
+<p><strong>When to use:</strong> The window size <code>k</code> is given and never changes.</p>
+<p><strong>Recognition keywords:</strong> &quot;subarray of size K&quot;, &quot;window size K&quot;, &quot;K consecutive elements&quot;, &quot;fixed-length substring&quot;</p>
+<p><strong>Idea:</strong> As <code>j</code> advances, add <code>arr[j]</code>; once the window reaches size <code>k</code>, record the answer, then remove <code>arr[i]</code> and slide forward.</p>
+<p><strong>Template:</strong></p>
+<pre><code class="language-cpp">int i = 0, j = 0;
+
+while (j &lt; n) {
+    // 1. Include arr[j]
+    add(arr[j]);
+
+    if (j - i + 1 &lt; k) {
+        j++;
+    } else { // window == k
+        // 2. Process answer
+        process();
+
+        // 3. Slide: remove leftmost element
+        remove(arr[i]);
+        i++;
+        j++;
+    }
+}
+</code></pre>
+<p><strong>Example — Maximum Sum Subarray of Size K:</strong></p>
+<pre><code class="language-cpp">int maxSum(vector&lt;int&gt;&amp; arr, int k) {
+    int i = 0, j = 0, sum = 0, ans = INT_MIN;
+
+    while (j &lt; arr.size()) {
+        sum += arr[j];
+
+        if (j - i + 1 == k) {
+            ans = max(ans, sum);
+            sum -= arr[i++];
+        }
+        j++;
+    }
+    return ans;
+}
+</code></pre>
+<p><strong>Practice problems:</strong></p>
+<ul>
+<li>Maximum Average Subarray I</li>
+<li>Find All Anagrams in a String</li>
+<li>Maximum Vowels in Substring of Length K</li>
+<li>K Radius Subarray Averages</li>
+</ul>
+<hr>
+<h3>4.2 Variable — Longest Window</h3>
+<p><strong>When to use:</strong> Find the <strong>maximum-length</strong> window satisfying a condition.</p>
+<p><strong>Recognition keywords:</strong> <em>longest, maximum length, at most K</em></p>
+<p><strong>Idea:</strong> Expand aggressively. Shrink only when the condition breaks. Record window size <strong>after</strong> each shrink.</p>
+<p><strong>Template:</strong></p>
+<pre><code class="language-cpp">int i = 0, ans = 0;
+
+for (int j = 0; j &lt; n; j++) {
+    add(arr[j]);                     // expand
+
+    while (invalid()) {              // shrink until valid
+        remove(arr[i++]);
+    }
+
+    ans = max(ans, j - i + 1);       // record longest valid window
+}
+</code></pre>
+<p><strong>Key problems and their conditions:</strong></p>
+<table>
+<thead>
+<tr>
+<th>Problem</th>
+<th>Validity Condition</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Longest Substring Without Repeating Characters</td>
+<td>no duplicate in window</td>
+</tr>
+<tr>
+<td>Fruit Into Baskets</td>
+<td>at most 2 distinct elements</td>
+</tr>
+<tr>
+<td>Longest Repeating Character Replacement</td>
+<td><code>windowSize - maxFreq &lt;= k</code></td>
+</tr>
+<tr>
+<td>Max Consecutive Ones III</td>
+<td>at most <code>k</code> zeros allowed</td>
+</tr>
+</tbody></table>
+<hr>
+<h3>4.3 Variable — Shortest Window</h3>
+<p><strong>When to use:</strong> Find the <strong>minimum-length</strong> window satisfying a condition.</p>
+<p><strong>Recognition keywords:</strong> <em>minimum, shortest, smallest</em></p>
+<p><strong>Idea:</strong> Expand until the condition is met. Then shrink as aggressively as possible, recording the answer <strong>while</strong> the window is still valid.</p>
+<p><strong>Template:</strong></p>
+<pre><code class="language-cpp">int i = 0, ans = INT_MAX;
+
+for (int j = 0; j &lt; n; j++) {
+    add(arr[j]);                     // expand
+
+    while (valid()) {                // shrink while still valid
+        ans = min(ans, j - i + 1);  // record inside the shrink loop
+        remove(arr[i++]);
+    }
+}
+</code></pre>
+<blockquote>
+<p>⚠️ <strong>Key difference from Longest:</strong> The answer is recorded <em>inside</em> the <code>while (valid)</code> loop, not after it.</p>
+</blockquote>
+<p><strong>Practice problems:</strong></p>
+<ul>
+<li>Minimum Window Substring</li>
+<li>Minimum Size Subarray Sum</li>
+<li>Minimum Consecutive Cards to Pick Up</li>
+</ul>
+<hr>
+<h3>4.4 HashMap / Frequency Map Window</h3>
+<p><strong>When to use:</strong> The condition depends on <strong>frequencies, duplicates, or distinct counts</strong> inside the window.</p>
+<p><strong>Common data structures:</strong> <code>unordered_map</code>, <code>vector&lt;int&gt; freq[256]</code></p>
+<p><strong>Template:</strong></p>
+<pre><code class="language-cpp">unordered_map&lt;char, int&gt; freq;
+int i = 0, ans = 0;
+
+for (int j = 0; j &lt; n; j++) {
+    freq[s[j]]++;                          // expand
+
+    while (invalid(freq)) {                // shrink
+        freq[s[i]]--;
+        if (freq[s[i]] == 0) freq.erase(s[i]);
+        i++;
+    }
+
+    ans = max(ans, j - i + 1);            // or += (j - i + 1) for counting
+}
+</code></pre>
+<p><strong>Practice problems:</strong></p>
+<ul>
+<li>Longest Substring Without Repeating Characters</li>
+<li>Longest Substring with At Most K Distinct Characters</li>
+<li>Minimum Window Substring</li>
+<li>Permutation in String</li>
+<li>Longest Repeating Character Replacement</li>
+</ul>
+<hr>
+<h3>4.5 Monotonic Deque Window</h3>
+<p><strong>When to use:</strong> You need the <strong>maximum or minimum element</strong> of every window of size <code>k</code>.</p>
+<p><strong>Data structure:</strong> <code>deque&lt;int&gt;</code> storing <strong>indices</strong> in monotonically decreasing (for max) or increasing (for min) order.</p>
+<p><strong>Key insight:</strong> Elements that can never be the answer are discarded immediately, keeping the deque lean. The front always holds the index of the current window&#39;s max (or min).</p>
+<p><strong>Template — Sliding Window Maximum:</strong></p>
+<pre><code class="language-cpp">vector&lt;int&gt; maxSlidingWindow(vector&lt;int&gt;&amp; nums, int k) {
+    deque&lt;int&gt; dq;   // stores indices; front = max of current window
+    vector&lt;int&gt; ans;
+
+    for (int i = 0; i &lt; nums.size(); i++) {
+        // Remove indices that have fallen out of the window
+        while (!dq.empty() &amp;&amp; dq.front() &lt;= i - k)
+            dq.pop_front();
+
+        // Remove indices whose values are &lt; current (they can never be the max)
+        while (!dq.empty() &amp;&amp; nums[dq.back()] &lt; nums[i])
+            dq.pop_back();
+
+        dq.push_back(i);
+
+        if (i &gt;= k - 1)
+            ans.push_back(nums[dq.front()]);
+    }
+    return ans;
+}
+</code></pre>
+<p><strong>Practice problems:</strong></p>
+<ul>
+<li>Sliding Window Maximum</li>
+<li>Longest Continuous Subarray With Absolute Diff ≤ Limit</li>
+</ul>
+<hr>
+<h2>5. The &quot;Exactly K&quot; Trick</h2>
+<p>Problems asking for <strong>exactly K</strong> distinct elements (or sum, or odd numbers) are difficult to solve directly with a single sliding window, because shrinking becomes ambiguous.</p>
+<p><strong>The formula:</strong></p>
+<pre><code>Exactly(K)  =  AtMost(K)  −  AtMost(K − 1)
+</code></pre>
+<p><strong>Why it works:</strong></p>
+<pre><code>AtMost(K)   counts subarrays with 0, 1, 2, …, K distinct elements
+AtMost(K-1) counts subarrays with 0, 1, 2, …, K-1 distinct elements
+Difference  = subarrays with exactly K distinct elements  ✓
+</code></pre>
+<p>Implement <code>AtMost(x)</code> using the <strong>Counting template</strong> (Section 4.2 / 4.3 variant), then call it twice.</p>
+<p><strong>Problems that use this trick:</strong></p>
+<ul>
+<li>Subarrays with K Different Integers</li>
+<li>Count Number of Nice Subarrays</li>
+<li>Binary Subarray Sum</li>
+</ul>
+<hr>
+<h2>6. Quick-Reference: Which Type to Use?</h2>
+<table>
+<thead>
+<tr>
+<th>Situation</th>
+<th>Pattern</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Window size is given as K</td>
+<td>Fixed Window</td>
+</tr>
+<tr>
+<td>Longest sequence satisfying a condition</td>
+<td>Variable — Longest</td>
+</tr>
+<tr>
+<td>Shortest sequence satisfying a condition</td>
+<td>Variable — Shortest</td>
+</tr>
+<tr>
+<td>Condition involves frequencies or distinct counts</td>
+<td>HashMap Window</td>
+</tr>
+<tr>
+<td>Need max/min of every window</td>
+<td>Monotonic Deque</td>
+</tr>
+<tr>
+<td>Count subarrays with at most K</td>
+<td>Counting (record <code>j - i + 1</code>)</td>
+</tr>
+<tr>
+<td>Count subarrays with exactly K</td>
+<td>AtMost(K) − AtMost(K−1)</td>
+</tr>
+<tr>
+<td>Window defined by a second string</td>
+<td>Two-String Window (HashMap)</td>
+</tr>
+</tbody></table>
+<p><strong>Counting subarrays:</strong>
+When a window <code>[i…j]</code> is valid, every subarray ending at <code>j</code> and starting anywhere from <code>i</code> to <code>j</code> is also valid — giving <code>(j - i + 1)</code> new valid subarrays to add to the answer.</p>
+<hr>
+<h2>7. Common Mistakes</h2>
+<p><strong>① Forgetting to undo left element on shrink</strong>
+When <code>i</code> moves right, you must reverse whatever you did when that element entered: decrement its frequency, subtract from sum, etc.</p>
+<p><strong>② Infinite loops</strong>
+Every iteration must advance either <code>i</code> or <code>j</code> (or both). If neither moves, the loop is infinite.</p>
+<p><strong>③ Wrong validity condition</strong>
+A classic example: for Longest Repeating Character Replacement, the condition is:</p>
+<pre><code>window_size - maxFreq &lt;= k    ✓
+</code></pre>
+<p>not <code>maxFreq &lt;= k</code> ✗</p>
+<p><strong>④ Recording the answer at the wrong time</strong></p>
+<table>
+<thead>
+<tr>
+<th>Goal</th>
+<th>When to record</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Longest</td>
+<td><em>After</em> the inner shrink loop</td>
+</tr>
+<tr>
+<td>Shortest</td>
+<td><em>Inside</em> the inner shrink loop (while still valid)</td>
+</tr>
+<tr>
+<td>Counting</td>
+<td><em>After</em> the inner shrink loop: <code>ans += (j - i + 1)</code></td>
+</tr>
+</tbody></table>
+<hr>
+<h2>8. Complexity</h2>
+<p>For almost all sliding window problems:</p>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Complexity</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Time</td>
+<td>O(n) — each pointer moves at most n times</td>
+</tr>
+<tr>
+<td>Space</td>
+<td>O(1) for sum/pointer problems; O(k) or O(alphabet) for HashMap variants</td>
+</tr>
+</tbody></table>
+<hr>
+<h2>9. Problem Bank</h2>
+<h3>Fixed Window</h3>
+<ul>
+<li>Maximum Sum Subarray of Size K</li>
+<li>Maximum Average Subarray I  <em>(LC 643)</em></li>
+<li>Find All Anagrams in a String  <em>(LC 438)</em></li>
+<li>Maximum Vowels in Substring of Length K  <em>(LC 1456)</em></li>
+<li>K Radius Subarray Averages  <em>(LC 2090)</em></li>
+</ul>
+<h3>Variable — Longest</h3>
+<ul>
+<li>Longest Substring Without Repeating Characters  <em>(LC 3)</em></li>
+<li>Fruit Into Baskets  <em>(LC 904)</em></li>
+<li>Longest Repeating Character Replacement  <em>(LC 424)</em></li>
+<li>Max Consecutive Ones III  <em>(LC 1004)</em></li>
+<li>Maximum Erasure Value  <em>(LC 1695)</em></li>
+</ul>
+<h3>Variable — Shortest</h3>
+<ul>
+<li>Minimum Window Substring  <em>(LC 76)</em></li>
+<li>Minimum Size Subarray Sum  <em>(LC 209)</em></li>
+<li>Minimum Consecutive Cards to Pick Up  <em>(LC 2260)</em></li>
+</ul>
+<h3>Counting</h3>
+<ul>
+<li>Binary Subarray Sum  <em>(LC 930)</em></li>
+<li>Count Number of Nice Subarrays  <em>(LC 1248)</em></li>
+<li>Subarrays with K Different Integers  <em>(LC 992)</em></li>
+<li>Number of Substrings Containing All Three Characters  <em>(LC 1358)</em></li>
+</ul>
+<h3>Monotonic Deque</h3>
+<ul>
+<li>Sliding Window Maximum  <em>(LC 239)</em></li>
+<li>Longest Continuous Subarray With Absolute Diff ≤ Limit  <em>(LC 1438)</em></li>
+</ul>
+<hr>
+<p><em>Master the longest, shortest, counting, HashMap, and deque patterns, plus the Exactly K trick, and you can solve the vast majority of sliding window problems at medium and hard difficulty.</em></p>
+
+</article>
+</body>
+</html>

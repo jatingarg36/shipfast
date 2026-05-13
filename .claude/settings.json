@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl -s -b publisher_token=271973787f395ed39fd7c61c8aa049dcb214ce9d7647e27c86472c1aa13c289d -X PATCH -H 'Content-Type: application/json' -d '{\"access\":\"public\"}' http://localhost:3000/api/pages/diet/access)",
+      "Bash(node -e ' *)"
+    ]
+  }
+}

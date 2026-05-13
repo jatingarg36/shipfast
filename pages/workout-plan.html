@@ -1,0 +1,853 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>6-Day Workout Plan — Cultpass ELITE</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a0a;
+    --card: #161616;
+    --border: #252525;
+    --red: #e8312a;
+    --red-dim: #b52520;
+    --white: #f0f0f0;
+    --muted: #777;
+    --gold: #f5c842;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 80% 0%, rgba(232,49,42,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 48px 24px 64px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* HEADER */
+  .header {
+    margin-bottom: 48px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .membership-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--red);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 5px 14px 5px 10px;
+    border-radius: 3px;
+    margin-bottom: 20px;
+  }
+
+  .membership-pill svg { width: 14px; height: 14px; fill: #fff; }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 10vw, 96px);
+    line-height: 0.9;
+    letter-spacing: 0.02em;
+    margin-bottom: 8px;
+  }
+
+  h1 .sub { color: var(--red); display: block; }
+
+  .header-desc {
+    font-size: 14px;
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-top: 16px;
+  }
+
+  .stats-bar {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+
+  .stat { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); }
+  .stat-value { font-size: 15px; font-weight: 600; color: var(--red); }
+
+  /* CULT COVERAGE BANNER */
+  .coverage-banner {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: 6px;
+    padding: 18px 20px;
+    margin-bottom: 32px;
+    animation: fadeUp 0.6s ease 0.1s both;
+  }
+
+  .coverage-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--red);
+    margin-bottom: 12px;
+  }
+
+  .coverage-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 8px;
+  }
+
+  .coverage-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #ccc;
+  }
+
+  .coverage-item .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    flex-shrink: 0;
+  }
+
+  .coverage-item .dot.gold { background: var(--gold); }
+
+  /* WEEK GRID */
+  .week-grid { display: grid; gap: 3px; }
+
+  .day-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    animation: fadeUp 0.55s ease both;
+    transition: border-color 0.2s, transform 0.15s;
+  }
+
+  .day-card:hover { border-color: rgba(232,49,42,0.5); transform: translateX(3px); }
+
+  .day-card:nth-child(1) { animation-delay: 0.12s; }
+  .day-card:nth-child(2) { animation-delay: 0.17s; }
+  .day-card:nth-child(3) { animation-delay: 0.22s; }
+  .day-card:nth-child(4) { animation-delay: 0.27s; }
+  .day-card:nth-child(5) { animation-delay: 0.32s; }
+  .day-card:nth-child(6) { animation-delay: 0.37s; }
+  .day-card:nth-child(7) { animation-delay: 0.42s; }
+
+  .day-card.rest-day { opacity: 0.55; }
+
+  .day-header {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 22px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .day-number {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 40px;
+    color: var(--border);
+    line-height: 1;
+    min-width: 40px;
+    transition: color 0.2s;
+  }
+
+  .day-card:hover .day-number,
+  .day-card.open .day-number { color: var(--red); }
+
+  .day-meta { flex: 1; }
+  .day-name { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--muted); margin-bottom: 2px; }
+  .day-title { font-family: 'Bebas Neue', sans-serif; font-size: 26px; letter-spacing: 0.04em; line-height: 1; }
+
+  .day-badges { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
+  .badge {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .badge.elite { border-color: var(--red); color: var(--red); background: rgba(232,49,42,0.08); }
+  .badge.class-badge { border-color: #56c9f7; color: #56c9f7; }
+  .badge.gym-badge { border-color: #a0f077; color: #a0f077; }
+  .badge.home { border-color: var(--gold); color: var(--gold); }
+
+  .toggle-icon {
+    font-size: 22px;
+    color: var(--muted);
+    transition: transform 0.3s, color 0.2s;
+    flex-shrink: 0;
+  }
+
+  .day-card.open .toggle-icon { transform: rotate(45deg); color: var(--red); }
+
+  .day-body {
+    display: none;
+    padding: 0 22px 22px;
+    border-top: 1px solid var(--border);
+  }
+
+  .day-card.open .day-body { display: block; animation: fadeUp 0.25s ease; }
+
+  /* CULT TAG */
+  .cult-source {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 18px;
+    margin-bottom: 2px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--red);
+    font-weight: 600;
+  }
+
+  .cult-source::before {
+    content: '●';
+    font-size: 6px;
+    color: var(--red);
+  }
+
+  .section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    margin: 18px 0 10px;
+  }
+
+  .exercise-list { display: grid; gap: 6px; }
+
+  .exercise-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 11px 14px;
+    background: rgba(255,255,255,0.025);
+    border-radius: 4px;
+    border-left: 2px solid var(--border);
+    transition: border-color 0.2s, background 0.2s;
+  }
+
+  .exercise-item:hover {
+    border-left-color: var(--red);
+    background: rgba(232,49,42,0.04);
+  }
+
+  .ex-icon { font-size: 18px; min-width: 26px; text-align: center; }
+  .ex-info { flex: 1; }
+  .ex-name { font-size: 13px; font-weight: 500; color: var(--white); margin-bottom: 2px; }
+  .ex-detail { font-size: 11px; color: var(--muted); line-height: 1.4; }
+  .ex-sets { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--red); letter-spacing: 0.06em; white-space: nowrap; }
+
+  .tip-box {
+    background: rgba(232,49,42,0.06);
+    border: 1px solid rgba(232,49,42,0.15);
+    border-radius: 4px;
+    padding: 13px 15px;
+    margin-top: 18px;
+    font-size: 12px;
+    color: #aaa;
+    line-height: 1.65;
+  }
+
+  .tip-box strong { color: #e8a0a0; }
+
+  .cult-note {
+    background: rgba(245,200,66,0.06);
+    border: 1px solid rgba(245,200,66,0.2);
+    border-radius: 4px;
+    padding: 11px 14px;
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--gold);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.5;
+  }
+
+  .cult-note .label { font-weight: 700; white-space: nowrap; }
+
+  /* REST */
+  .rest-icon { font-size: 40px; text-align: center; padding: 10px 0 4px; }
+
+  /* FOOTER */
+  .footer-grid {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 2px;
+    animation: fadeUp 0.6s ease 0.5s both;
+  }
+
+  .footer-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 18px 20px;
+    border-radius: 4px;
+  }
+
+  .footer-card:first-child { border-left: 3px solid var(--red); }
+
+  .fc-title { font-size: 10px; text-transform: uppercase; letter-spacing: 0.12em; color: var(--red); margin-bottom: 8px; }
+  .fc-text { font-size: 12px; color: var(--muted); line-height: 1.65; }
+  .fc-text strong { color: #ccc; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @media (max-width: 600px) {
+    .day-header { padding: 14px 16px; gap: 12px; }
+    .day-body { padding: 0 14px 16px; }
+    .day-number { font-size: 30px; }
+    .day-title { font-size: 20px; }
+    .coverage-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="membership-pill">
+      <svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Cultpass ELITE · Beginner Program
+    </div>
+    <h1>LEAN<span class="sub">STRONG</span></h1>
+    <p class="header-desc">Your 6-day plan is mapped entirely to cult.fit ELITE membership — every gym session uses ELITE gyms, every class is bookable directly in the cult.fit app.</p>
+    <div class="stats-bar">
+      <div class="stat"><span class="stat-label">Weight</span><span class="stat-value">82 kg</span></div>
+      <div class="stat"><span class="stat-label">Height</span><span class="stat-value">5'10"</span></div>
+      <div class="stat"><span class="stat-label">Goal</span><span class="stat-value">Low Fat + Lean Muscle</span></div>
+      <div class="stat"><span class="stat-label">Level</span><span class="stat-value">Beginner</span></div>
+      <div class="stat"><span class="stat-label">Booking</span><span class="stat-value">Up to 4 Classes Pre-booked</span></div>
+    </div>
+  </div>
+
+  <!-- COVERAGE BANNER -->
+  <div class="coverage-banner">
+    <div class="coverage-title">✓ What Cultpass ELITE Covers In This Plan</div>
+    <div class="coverage-grid">
+      <div class="coverage-item"><div class="dot"></div>ELITE Gym Access (Mon/Wed/Fri)</div>
+      <div class="coverage-item"><div class="dot"></div>Yoga Class (Tuesday)</div>
+      <div class="coverage-item"><div class="dot"></div>Boxing Class (Thursday)</div>
+      <div class="coverage-item"><div class="dot"></div>HRX / Strength Class (Friday)</div>
+      <div class="coverage-item"><div class="dot"></div>Dance Fitness (alt. Thursday)</div>
+      <div class="coverage-item"><div class="dot"></div>Burn / S&C Class (Saturday)</div>
+      <div class="coverage-item"><div class="dot gold"></div>At-Home Workouts (app)</div>
+      <div class="coverage-item"><div class="dot gold"></div>Cult certified trainers included</div>
+      <div class="coverage-item"><div class="dot gold"></div>Customised fitness plan</div>
+      <div class="coverage-item"><div class="dot gold"></div>5 sessions/mo if travelling</div>
+    </div>
+  </div>
+
+  <!-- WEEK GRID -->
+  <div class="week-grid">
+
+    <!-- DAY 1 -->
+    <div class="day-card" onclick="toggleDay(this)">
+      <div class="day-header">
+        <div class="day-number">01</div>
+        <div class="day-meta">
+          <div class="day-name">Monday</div>
+          <div class="day-title">CHEST & TRICEPS — ELITE GYM</div>
+          <div class="day-badges">
+            <span class="badge elite">ELITE</span>
+            <span class="badge gym-badge">ELITE Gym</span>
+            <span class="badge">Strength</span>
+          </div>
+        </div>
+        <div class="toggle-icon">+</div>
+      </div>
+      <div class="day-body">
+        <div class="cult-note"><span class="label">CULT.FIT →</span> Visit any ELITE gym in your city — check in via app. Cult certified trainer available on floor to assist form.</div>
+
+        <div class="section-title">Warm-Up — 8 min</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🔥</div>
+            <div class="ex-info"><div class="ex-name">Treadmill Walk (incline 3)</div><div class="ex-detail">Prime cardiovascular system, loosen chest and shoulders</div></div>
+            <div class="ex-sets">5 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🙆</div>
+            <div class="ex-info"><div class="ex-name">Arm circles + chest opener stretch</div><div class="ex-detail">Dynamic mobility — ask the floor trainer if unsure</div></div>
+            <div class="ex-sets">3 MIN</div>
+          </div>
+        </div>
+
+        <div class="section-title">Main Workout</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🏋️</div>
+            <div class="ex-info"><div class="ex-name">Flat Barbell Bench Press</div><div class="ex-detail">Light weight, full range — cult trainer can spot you</div></div>
+            <div class="ex-sets">3×10</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">↗️</div>
+            <div class="ex-info"><div class="ex-name">Incline Dumbbell Press</div><div class="ex-detail">Upper chest emphasis, slow eccentric (3 sec down)</div></div>
+            <div class="ex-sets">3×12</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🔁</div>
+            <div class="ex-info"><div class="ex-name">Cable Chest Fly</div><div class="ex-detail">Squeeze at centre, keep slight bend at elbow</div></div>
+            <div class="ex-sets">3×15</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">⬇️</div>
+            <div class="ex-info"><div class="ex-name">Tricep Pushdown (rope)</div><div class="ex-detail">Elbows pinned, flare at bottom</div></div>
+            <div class="ex-sets">3×15</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">💪</div>
+            <div class="ex-info"><div class="ex-name">Overhead Tricep Extension (dumbbell)</div><div class="ex-detail">Long head activation, keep core braced</div></div>
+            <div class="ex-sets">3×12</div>
+          </div>
+        </div>
+
+        <div class="section-title">Cardio Finisher — 10 min</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🚴</div>
+            <div class="ex-info"><div class="ex-name">Stationary Bike</div><div class="ex-detail">Moderate pace, HR 120–140 bpm</div></div>
+            <div class="ex-sets">10 MIN</div>
+          </div>
+        </div>
+        <div class="tip-box"><strong>Tip:</strong> Rest 60–90 sec between sets. The cult trainer on the floor is included in your ELITE membership — use them for form checks, especially on bench press.</div>
+      </div>
+    </div>
+
+    <!-- DAY 2 -->
+    <div class="day-card" onclick="toggleDay(this)">
+      <div class="day-header">
+        <div class="day-number">02</div>
+        <div class="day-meta">
+          <div class="day-name">Tuesday</div>
+          <div class="day-title">YOGA — CULT CLASS</div>
+          <div class="day-badges">
+            <span class="badge elite">ELITE</span>
+            <span class="badge class-badge">Cult Centre</span>
+            <span class="badge">Mobility · Recovery</span>
+          </div>
+        </div>
+        <div class="toggle-icon">+</div>
+      </div>
+      <div class="day-body">
+        <div class="cult-note"><span class="label">CULT.FIT →</span> Book "Yoga" class at your nearest cult centre via the app. Pre-book up to 4 classes at a time. All beginner-friendly — arrive 10 mins early for your first class.</div>
+
+        <div class="cult-source">Cult.fit Yoga Class Format</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🧘</div>
+            <div class="ex-info"><div class="ex-name">Warm-Up</div><div class="ex-detail">Breathing techniques and light mobility</div></div>
+            <div class="ex-sets">8 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">☀️</div>
+            <div class="ex-info"><div class="ex-name">Suryanamaskara (Sun Salutations)</div><div class="ex-detail">Full-body warm-through, calorie burn begins</div></div>
+            <div class="ex-sets">10 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🦵</div>
+            <div class="ex-info"><div class="ex-name">Asana Practice</div><div class="ex-detail">Warrior I & II, Pigeon, Triangle — flexibility + hip flexors</div></div>
+            <div class="ex-sets">24 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🌙</div>
+            <div class="ex-info"><div class="ex-name">Relaxation / Savasana</div><div class="ex-detail">Nervous system recovery, breathing techniques</div></div>
+            <div class="ex-sets">8 MIN</div>
+          </div>
+        </div>
+
+        <div class="section-title">Also available — Hatha Yoga or Evolve Yoga</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🌿</div>
+            <div class="ex-info"><div class="ex-name">Hatha Yoga</div><div class="ex-detail">Slower, great for absolute beginners — posture and balance focus</div></div>
+            <div class="ex-sets">50 MIN</div>
+          </div>
+        </div>
+        <div class="tip-box"><strong>Why this works:</strong> Cult yoga classes include breathing, asana and meditation — improving posture for better lifts, reducing DOMS (soreness) from Monday's session, and training the stabiliser muscles that make you look leaner.</div>
+      </div>
+    </div>
+
+    <!-- DAY 3 -->
+    <div class="day-card" onclick="toggleDay(this)">
+      <div class="day-header">
+        <div class="day-number">03</div>
+        <div class="day-meta">
+          <div class="day-name">Wednesday</div>
+          <div class="day-title">BACK & BICEPS — ELITE GYM</div>
+          <div class="day-badges">
+            <span class="badge elite">ELITE</span>
+            <span class="badge gym-badge">ELITE Gym</span>
+            <span class="badge">Strength</span>
+          </div>
+        </div>
+        <div class="toggle-icon">+</div>
+      </div>
+      <div class="day-body">
+        <div class="cult-note"><span class="label">CULT.FIT →</span> Check into any ELITE gym via the app. Cult certified trainer on floor — ask them to review your lat pulldown form if it's your first time.</div>
+
+        <div class="section-title">Warm-Up — 8 min</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🚣</div>
+            <div class="ex-info"><div class="ex-name">Row Machine (light)</div><div class="ex-detail">Prime pulling muscles, get blood to upper back</div></div>
+            <div class="ex-sets">5 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🙆</div>
+            <div class="ex-info"><div class="ex-name">Shoulder rolls + doorframe lat stretch</div><div class="ex-detail">30 seconds each side</div></div>
+            <div class="ex-sets">3 MIN</div>
+          </div>
+        </div>
+
+        <div class="section-title">Main Workout</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🏋️</div>
+            <div class="ex-info"><div class="ex-name">Lat Pulldown (wide grip)</div><div class="ex-detail">Pull to upper chest, squeeze lats at bottom</div></div>
+            <div class="ex-sets">3×12</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🔁</div>
+            <div class="ex-info"><div class="ex-name">Seated Cable Row</div><div class="ex-detail">Neutral grip, drive elbows back past torso</div></div>
+            <div class="ex-sets">3×12</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">↙️</div>
+            <div class="ex-info"><div class="ex-name">Single-Arm Dumbbell Row</div><div class="ex-detail">Full stretch at bottom, row to hip</div></div>
+            <div class="ex-sets">3×10 each</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">💪</div>
+            <div class="ex-info"><div class="ex-name">Dumbbell Bicep Curl (alternating)</div><div class="ex-detail">Supinate at top, no swinging</div></div>
+            <div class="ex-sets">3×12</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🔀</div>
+            <div class="ex-info"><div class="ex-name">Hammer Curl</div><div class="ex-detail">Brachialis focus — thickens arm silhouette</div></div>
+            <div class="ex-sets">3×12</div>
+          </div>
+        </div>
+
+        <div class="section-title">Cardio Finisher</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🚶</div>
+            <div class="ex-info"><div class="ex-name">Incline Treadmill Walk</div><div class="ex-detail">Incline 8–10, speed 4.5 km/h — low-impact fat burn</div></div>
+            <div class="ex-sets">10 MIN</div>
+          </div>
+        </div>
+        <div class="tip-box"><strong>Tip:</strong> ELITE gyms offer "top quality, well maintained equipment" per cult.fit. Wednesday pulling muscles directly balance Monday's pushing — essential for posture and lean upper body proportions.</div>
+      </div>
+    </div>
+
+    <!-- DAY 4 -->
+    <div class="day-card" onclick="toggleDay(this)">
+      <div class="day-header">
+        <div class="day-number">04</div>
+        <div class="day-meta">
+          <div class="day-name">Thursday</div>
+          <div class="day-title">BOXING — CULT CLASS</div>
+          <div class="day-badges">
+            <span class="badge elite">ELITE</span>
+            <span class="badge class-badge">Cult Centre</span>
+            <span class="badge">Fat Burn</span>
+          </div>
+        </div>
+        <div class="toggle-icon">+</div>
+      </div>
+      <div class="day-body">
+        <div class="cult-note"><span class="label">CULT.FIT →</span> Book "Boxing" class at a cult centre. If slots are full, "Dance Fitness" or "Burn" are direct alternatives on the same day — all bookable in the app.</div>
+
+        <div class="cult-source">Cult.fit Boxing Class Format (50 min)</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🔥</div>
+            <div class="ex-info"><div class="ex-name">Warm-Up</div><div class="ex-detail">Dynamic movement, joint prep, footwork basics</div></div>
+            <div class="ex-sets">10 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🥊</div>
+            <div class="ex-info"><div class="ex-name">Boxing Technique & Skill Work</div><div class="ex-detail">Jab, cross, hook, uppercut combos — cardiovascular + agility</div></div>
+            <div class="ex-sets">20 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🔄</div>
+            <div class="ex-info"><div class="ex-name">Core & Conditioning Routine</div><div class="ex-detail">Planks, mountain climbers, burpees — full body burn</div></div>
+            <div class="ex-sets">15 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🧊</div>
+            <div class="ex-info"><div class="ex-name">Cool Down</div><div class="ex-detail">Stretch and breathe down</div></div>
+            <div class="ex-sets">5 MIN</div>
+          </div>
+        </div>
+
+        <div class="section-title">Backup Class Options (same day, same ELITE membership)</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">💃</div>
+            <div class="ex-info"><div class="ex-name">Dance Fitness</div><div class="ex-detail">Full-body aerobic, 7 min dance form → 25 min main → 5 min challenge → cool down. Burns 400+ kcal</div></div>
+            <div class="ex-sets">50 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">⚡</div>
+            <div class="ex-info"><div class="ex-name">Burn Class</div><div class="ex-detail">High-intensity lower-impact format combining cardio, strength & mobility</div></div>
+            <div class="ex-sets">50 MIN</div>
+          </div>
+        </div>
+        <div class="tip-box"><strong>Why Boxing?</strong> Cult.fit's Boxing class specifically targets "cardiovascular strength and boxing technique" — ideal for fat loss at your weight while building upper body conditioning without heavy lifting.</div>
+      </div>
+    </div>
+
+    <!-- DAY 5 -->
+    <div class="day-card" onclick="toggleDay(this)">
+      <div class="day-header">
+        <div class="day-number">05</div>
+        <div class="day-meta">
+          <div class="day-name">Friday</div>
+          <div class="day-title">LEGS + HRX CLASS — ELITE GYM & CENTRE</div>
+          <div class="day-badges">
+            <span class="badge elite">ELITE</span>
+            <span class="badge gym-badge">ELITE Gym</span>
+            <span class="badge class-badge">HRX Class</span>
+          </div>
+        </div>
+        <div class="toggle-icon">+</div>
+      </div>
+      <div class="day-body">
+        <div class="cult-note"><span class="label">CULT.FIT →</span> Split Friday: 30–35 min leg workout at the ELITE gym, then book an HRX or Adidas Strength+ class at a cult centre for the second half. Both are included in your ELITE pass.</div>
+
+        <div class="section-title">Part 1 — Legs at ELITE Gym (35 min)</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🏋️</div>
+            <div class="ex-info"><div class="ex-name">Goblet Squat (dumbbell)</div><div class="ex-detail">Beginner-safe squat pattern — great depth cue</div></div>
+            <div class="ex-sets">3×12</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">⬇️</div>
+            <div class="ex-info"><div class="ex-name">Romanian Deadlift (dumbbells)</div><div class="ex-detail">Hip hinge, flat back — hamstrings + glutes</div></div>
+            <div class="ex-sets">3×12</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🦶</div>
+            <div class="ex-info"><div class="ex-name">Leg Press Machine</div><div class="ex-detail">Controlled descent, feet shoulder-width</div></div>
+            <div class="ex-sets">3×15</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">⬆️</div>
+            <div class="ex-info"><div class="ex-name">Calf Raise (standing)</div><div class="ex-detail">Full range, pause at top and bottom</div></div>
+            <div class="ex-sets">4×20</div>
+          </div>
+        </div>
+
+        <div class="cult-source">Part 2 — HRX Class at Cult Centre</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">⚡</div>
+            <div class="ex-info"><div class="ex-name">HRX Workout Class</div><div class="ex-detail">Cult's signature format — core + full-body strength, muscle building and mobility. Curated with Hrithik Roshan. Beginner versions available.</div></div>
+            <div class="ex-sets">50 MIN</div>
+          </div>
+        </div>
+
+        <div class="section-title">Alternative to HRX</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🏅</div>
+            <div class="ex-info"><div class="ex-name">Adidas Strength+ Class</div><div class="ex-detail">Strength and conditioning class format — also ELITE-included. 8 min warm-up, 20 min conditioning, 10 min core, 5 min cool-down</div></div>
+            <div class="ex-sets">50 MIN</div>
+          </div>
+        </div>
+        <div class="tip-box"><strong>Legs = biggest calorie burn.</strong> Your largest muscle group + an HRX class on the same day creates maximum fat-burning stimulus for the week. HRX is specifically designed for "core + full-body strength, muscle gaining, and mobility" — perfectly aligned with your lean muscle goal.</div>
+      </div>
+    </div>
+
+    <!-- DAY 6 -->
+    <div class="day-card" onclick="toggleDay(this)">
+      <div class="day-header">
+        <div class="day-number">06</div>
+        <div class="day-meta">
+          <div class="day-name">Saturday</div>
+          <div class="day-title">STRENGTH & CONDITIONING CLASS</div>
+          <div class="day-badges">
+            <span class="badge elite">ELITE</span>
+            <span class="badge class-badge">Cult Centre</span>
+            <span class="badge">Core · Endurance</span>
+          </div>
+        </div>
+        <div class="toggle-icon">+</div>
+      </div>
+      <div class="day-body">
+        <div class="cult-note"><span class="label">CULT.FIT →</span> Book "Strength & Conditioning (S&C)" class at your cult centre. Alternatively choose a "Burn" class or your second yoga session of the week — all under ELITE.</div>
+
+        <div class="cult-source">Cult.fit S&C Class Format (50 min)</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🔥</div>
+            <div class="ex-info"><div class="ex-name">Warm-Up</div><div class="ex-detail">Dynamic movement prep, mobility activation</div></div>
+            <div class="ex-sets">8 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">📋</div>
+            <div class="ex-info"><div class="ex-name">Workout Introduction</div><div class="ex-detail">Trainer explains movements and modifications for beginners</div></div>
+            <div class="ex-sets">7 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">💥</div>
+            <div class="ex-info"><div class="ex-name">Conditioning Routine</div><div class="ex-detail">Functional movements — builds strength, endurance, range of motion</div></div>
+            <div class="ex-sets">20 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🧱</div>
+            <div class="ex-info"><div class="ex-name">Core Workout</div><div class="ex-detail">Planks, dead bugs, rotational work — deep core stability</div></div>
+            <div class="ex-sets">10 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🧊</div>
+            <div class="ex-info"><div class="ex-name">Cool Down</div><div class="ex-detail">Full-body stretch, breathing</div></div>
+            <div class="ex-sets">5 MIN</div>
+          </div>
+        </div>
+
+        <div class="section-title">Backup Class — Saturday</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🔥</div>
+            <div class="ex-info"><div class="ex-name">Burn Class</div><div class="ex-detail">High-intensity, lower-impact — combines cardio, strength & mobility. Perfect Saturday finisher for the week.</div></div>
+            <div class="ex-sets">50 MIN</div>
+          </div>
+        </div>
+        <div class="tip-box"><strong>S&C is the perfect Saturday class</strong> — cult.fit designed it to "create a stimulus for improved strength & endurance while helping participants build a great physique, improved range of motion, and all-round functional fitness." This directly reinforces your lean muscle goal heading into rest day.</div>
+      </div>
+    </div>
+
+    <!-- DAY 7 -->
+    <div class="day-card rest-day" onclick="toggleDay(this)">
+      <div class="day-header">
+        <div class="day-number">07</div>
+        <div class="day-meta">
+          <div class="day-name">Sunday</div>
+          <div class="day-title">REST + AT-HOME (OPTIONAL)</div>
+          <div class="day-badges">
+            <span class="badge home">At-Home</span>
+            <span class="badge">Recovery</span>
+          </div>
+        </div>
+        <div class="toggle-icon">+</div>
+      </div>
+      <div class="day-body">
+        <div class="cult-note"><span class="label">CULT.FIT →</span> Your ELITE pass includes unlimited at-home workouts in the app — 1200+ videos across strength, yoga, dance & meditation. Completely optional on rest day. Use the meditation or sleep content.</div>
+
+        <div class="section-title">Active Recovery (optional)</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🧘</div>
+            <div class="ex-info"><div class="ex-name">Cult app — Meditation / Yoga Nidra</div><div class="ex-detail">Under the meditation section — reduces cortisol, aids muscle recovery</div></div>
+            <div class="ex-sets">20 MIN</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">🚶</div>
+            <div class="ex-info"><div class="ex-name">Easy walk outdoors</div><div class="ex-detail">Not mandatory — promotes blood flow, aids recovery</div></div>
+            <div class="ex-sets">Optional</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">💧</div>
+            <div class="ex-info"><div class="ex-name">Hydrate & hit protein target</div><div class="ex-detail">2.5–3L water. 130g protein — muscles rebuild on rest days</div></div>
+            <div class="ex-sets">All day</div>
+          </div>
+        </div>
+
+        <div class="section-title">Also in the app today</div>
+        <div class="exercise-list">
+          <div class="exercise-item">
+            <div class="ex-icon">🎙️</div>
+            <div class="ex-info"><div class="ex-name">Health Podcasts & Daily Reads</div><div class="ex-detail">Included in ELITE — fitness habits, nutrition, recovery education</div></div>
+            <div class="ex-sets">Anytime</div>
+          </div>
+          <div class="exercise-item">
+            <div class="ex-icon">📊</div>
+            <div class="ex-info"><div class="ex-name">Review your week in the cult.fit app</div><div class="ex-detail">Check energy scores, progress reports — available with ELITE</div></div>
+            <div class="ex-sets">10 MIN</div>
+          </div>
+        </div>
+        <div class="tip-box"><strong>Muscles grow during rest, not during training.</strong> Protect Sunday. Use the cult.fit app's Customised Smart Workout Plan feature (included in ELITE) to check your weekly plan alignment.</div>
+      </div>
+    </div>
+
+  </div><!-- end week grid -->
+
+  <!-- FOOTER -->
+  <div class="footer-grid">
+    <div class="footer-card">
+      <div class="fc-title">🎟 ELITE Coverage</div>
+      <div class="fc-text">Every session in this plan — gym, class, and at-home — is <strong>fully covered</strong> by Cultpass ELITE. No extra booking fees. Pre-book up to <strong>4 classes at a time</strong> in the app.</div>
+    </div>
+    <div class="footer-card">
+      <div class="fc-title">🏋️ Trainer Access</div>
+      <div class="fc-text">Cult certified trainers are present at all ELITE gyms and lead every class. <strong>Use them actively</strong> — especially in your first 4 weeks for form correction.</div>
+    </div>
+    <div class="footer-card">
+      <div class="fc-title">🥗 Nutrition</div>
+      <div class="fc-text">Target <strong>2,000–2,300 kcal/day</strong>. Prioritise ~130g protein (1.6g/kg bodyweight). Use the cult.fit smart plan for nutrition alignment.</div>
+    </div>
+    <div class="footer-card">
+      <div class="fc-title">✈️ Travelling?</div>
+      <div class="fc-text">ELITE gives you <strong>5 sessions/month in another city</strong>. Classes and gyms both count — keep the routine going anywhere in India.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function toggleDay(card) {
+    card.classList.toggle('open');
+  }
+  document.querySelector('.day-card').classList.add('open');
+</script>
+</body>
+</html>

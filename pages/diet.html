@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<!-- page-type:jsx -->
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>diet</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{min-height:100vh}</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState } = React;
+
+const STATS = { weight: 82, height: "5'10\"", age: 26, bmi: 25.9, targetProtein: 123, targetCals: 1900 };
+
+const days = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"];
+
+const mealPlan = {
+  Monday: {
+    wakeup:     { meal: "Warm lemon water (500ml) + 10 soaked almonds + 4 walnut halves + 2 soaked figs (anjeer)", cals: 150, protein: 4,  carbs: 16, fat: 9,  dryFruit:"🌰 Almonds · Walnuts · Figs" },
+    breakfast:  { meal: "4 Moong Dal Chilla + green chutney + 200g hung curd", cals: 390, protein: 24, carbs: 42, fat: 8,  dryFruit:null },
+    midMorning: { meal: "Sattu drink (40g) + 1 banana + 15 pistachios", cals: 280, protein: 14, carbs: 42, fat: 7,  dryFruit:"🟢 Pistachios — protein boost" },
+    lunch:      { meal: "2 Multigrain roti + Rajma curry + 200g cucumber raita + salad", cals: 520, protein: 26, carbs: 68, fat: 9,  dryFruit:null },
+    preworkout: { meal: "1 medium sweet potato (150g) + 1 tbsp raisins + black coffee", cals: 175, protein: 2,  carbs: 40, fat: 0,  dryFruit:"🍇 Raisins — quick energy before workout" },
+    postworkout:{ meal: "Whey protein (30g) + 250ml low-fat milk", cals: 230, protein: 28, carbs: 18, fat: 3,  dryFruit:null },
+    dinner:     { meal: "150g grilled paneer + 1 multigrain roti + palak sabzi + salad", cals: 460, protein: 28, carbs: 28, fat: 18, dryFruit:null },
+    bedtime:    { meal: "300ml warm low-fat milk + ½ tsp turmeric + 2 soaked figs + 3 dried apricots", cals: 175, protein: 9,  carbs: 26, fat: 2,  dryFruit:"🍑 Figs + Apricots — digestion & recovery overnight" },
+  },
+  Tuesday: {
+    wakeup:     { meal: "Warm lemon water + 10 soaked almonds + 4 walnut halves + 3 dried apricots", cals: 160, protein: 4,  carbs: 18, fat: 9,  dryFruit:"🌰 Almonds · Walnuts · Apricots" },
+    breakfast:  { meal: "Oats (80g) cooked with 250ml milk + 1 scoop whey stirred in + banana slices", cals: 410, protein: 26, carbs: 55, fat: 7,  dryFruit:null },
+    midMorning: { meal: "250g Greek yogurt + 1 tbsp chia seeds + 10 pistachios + mixed berries", cals: 240, protein: 18, carbs: 24, fat: 8,  dryFruit:"🟢 Pistachios — healthy fat + protein" },
+    lunch:      { meal: "1 cup brown rice + chana dal + bhindi sabzi + raita", cals: 510, protein: 24, carbs: 72, fat: 8,  dryFruit:null },
+    preworkout: { meal: "2 whole wheat bread + 2 tbsp peanut butter + 1 date + black coffee", cals: 300, protein: 10, carbs: 36, fat: 14, dryFruit:"📅 1 Date — natural pre-workout sugar" },
+    postworkout:{ meal: "30g whey + 250ml milk OR 300g Greek yogurt + 1 banana", cals: 230, protein: 28, carbs: 20, fat: 3,  dryFruit:null },
+    dinner:     { meal: "100g soya chunks curry + 1 roti + lauki sabzi + salad + raita", cals: 420, protein: 28, carbs: 42, fat: 9,  dryFruit:null },
+    bedtime:    { meal: "300ml warm milk + turmeric + 4 cashews + 2 figs (soaked)", cals: 185, protein: 9,  carbs: 24, fat: 6,  dryFruit:"🥛 Cashews + Figs — magnesium for muscle recovery" },
+  },
+  Wednesday: {
+    wakeup:     { meal: "Warm lemon water + 12 soaked almonds + 4 walnut halves", cals: 140, protein: 4,  carbs: 8,  fat: 11, dryFruit:"🌰 Almonds · Walnuts — Omega-3 + Vit E" },
+    breakfast:  { meal: "4 Besan cheela + 100g paneer filling + mint chutney + 1 cup curd", cals: 420, protein: 28, carbs: 38, fat: 14, dryFruit:null },
+    midMorning: { meal: "Sattu sharbat (40g) + 1 apple + 15 pistachios + 1 tbsp pumpkin seeds", cals: 260, protein: 13, carbs: 38, fat: 9,  dryFruit:"🟢 Pistachios — highest protein dry fruit" },
+    lunch:      { meal: "1 cup quinoa + kidney bean curry + 200g raita + salad", cals: 500, protein: 26, carbs: 65, fat: 9,  dryFruit:null },
+    preworkout: { meal: "1 banana + 20g roasted peanuts + 2 dates + black coffee", cals: 230, protein: 6,  carbs: 40, fat: 8,  dryFruit:"📅 Dates — iron + instant energy, ideal pre-workout" },
+    postworkout:{ meal: "30g whey + 250ml milk", cals: 225, protein: 28, carbs: 18, fat: 3,  dryFruit:null },
+    dinner:     { meal: "150g paneer tikka (grilled) + 1 bajra roti + gobi-matar sabzi + salad", cals: 450, protein: 28, carbs: 35, fat: 18, dryFruit:null },
+    bedtime:    { meal: "300ml warm milk + ashwagandha + 3 dried apricots + 2 figs", cals: 180, protein: 9,  carbs: 28, fat: 2,  dryFruit:"🍑 Apricots — prevents muscle cramps, rich in potassium" },
+  },
+  Thursday: {
+    wakeup:     { meal: "Warm lemon water + 10 almonds + 4 walnut halves + 3 dried apricots", cals: 160, protein: 4,  carbs: 18, fat: 9,  dryFruit:"🌰 Almonds · Walnuts · Apricots" },
+    breakfast:  { meal: "3 egg whites / tofu scramble (150g) + 2 whole wheat toast + ½ avocado", cals: 380, protein: 24, carbs: 36, fat: 14, dryFruit:null },
+    midMorning: { meal: "250ml buttermilk + 30g roasted chana + 15 pistachios + 1 pear", cals: 250, protein: 12, carbs: 36, fat: 7,  dryFruit:"🟢 Pistachios — great mid-meal satiety" },
+    lunch:      { meal: "2 jowar roti + chole + baingan bharta + 200g raita", cals: 520, protein: 22, carbs: 72, fat: 10, dryFruit:null },
+    preworkout: { meal: "150g boiled sweet potato + 1 tbsp peanut butter + 1 date", cals: 220, protein: 5,  carbs: 40, fat: 8,  dryFruit:"📅 1 Date — quick natural carb before gym" },
+    postworkout:{ meal: "30g whey + 250ml milk", cals: 225, protein: 28, carbs: 18, fat: 3,  dryFruit:null },
+    dinner:     { meal: "100g soya + mushroom stir-fry + 1 roti + palak soup + salad", cals: 400, protein: 26, carbs: 38, fat: 10, dryFruit:null },
+    bedtime:    { meal: "300ml warm milk + turmeric + 4 cashews + 2 soaked figs", cals: 185, protein: 9,  carbs: 24, fat: 6,  dryFruit:"🥜 Cashews — zinc + magnesium for testosterone & recovery" },
+  },
+  Friday: {
+    wakeup:     { meal: "Warm lemon water + 10 almonds + 4 walnut halves + 2 figs (soaked overnight)", cals: 150, protein: 4,  carbs: 16, fat: 9,  dryFruit:"🌰 Almonds · Walnuts · Figs — fibre-rich morning start" },
+    breakfast:  { meal: "5 idli + sambar (1 cup with veg) + coconut chutney (small)", cals: 360, protein: 16, carbs: 60, fat: 7,  dryFruit:null },
+    midMorning: { meal: "250g Greek yogurt + 1 scoop whey + 1 tbsp honey + 10 pistachios", cals: 300, protein: 28, carbs: 24, fat: 7,  dryFruit:"🟢 Pistachios — antioxidants + protein" },
+    lunch:      { meal: "2 bajra roti + dal makhani (less cream) + bhindi sabzi + salad", cals: 490, protein: 22, carbs: 64, fat: 12, dryFruit:null },
+    preworkout: { meal: "1 banana + 1 tbsp raisins + black coffee", cals: 145, protein: 1,  carbs: 36, fat: 0,  dryFruit:"🍇 Raisins — fast carbs, great for pre-workout energy" },
+    postworkout:{ meal: "30g whey + banana smoothie", cals: 240, protein: 28, carbs: 24, fat: 3,  dryFruit:null },
+    dinner:     { meal: "150g paneer bhurji + 1 roti + cucumber-tomato raita + soup", cals: 450, protein: 28, carbs: 32, fat: 18, dryFruit:null },
+    bedtime:    { meal: "300ml warm milk + turmeric + 3 dried apricots + 2 figs", cals: 175, protein: 9,  carbs: 26, fat: 2,  dryFruit:"🍑 Apricots + Figs — iron, calcium & gut health" },
+  },
+  Saturday: {
+    wakeup:     { meal: "Warm lemon water + 12 almonds + 4 walnut halves + 3 apricots", cals: 160, protein: 4,  carbs: 18, fat: 9,  dryFruit:"🌰 Full dry fruit morning combo" },
+    breakfast:  { meal: "2 large dosa + sambar + chutney + 150g tofu scramble", cals: 430, protein: 22, carbs: 58, fat: 12, dryFruit:null },
+    midMorning: { meal: "Sattu drink (40g) + 1 orange + 15 pistachios + 1 tbsp pumpkin seeds", cals: 250, protein: 12, carbs: 36, fat: 8,  dryFruit:"🟢 Pistachios — Vitamin B6 for metabolism" },
+    lunch:      { meal: "1.5 cup brown rice + mixed veg sambar + avial + papad (1)", cals: 480, protein: 18, carbs: 76, fat: 10, dryFruit:null },
+    preworkout: { meal: "4 rice cakes + 2 tbsp peanut butter + 2 dates + coffee", cals: 290, protein: 8,  carbs: 44, fat: 12, dryFruit:"📅 Dates — natural glucose spike for heavy lifting days" },
+    postworkout:{ meal: "30g whey + 250ml milk", cals: 225, protein: 28, carbs: 18, fat: 3,  dryFruit:null },
+    dinner:     { meal: "150g grilled paneer tikka + mint chutney + 1 roti + big salad", cals: 440, protein: 28, carbs: 28, fat: 18, dryFruit:null },
+    bedtime:    { meal: "300ml warm milk + cardamom + 4 cashews + 2 figs", cals: 185, protein: 9,  carbs: 24, fat: 6,  dryFruit:"🥜 Cashews + Figs — sleep-promoting magnesium" },
+  },
+  Sunday: {
+    wakeup:     { meal: "Warm lemon water + 10 almonds + 4 walnut halves + 2 figs", cals: 150, protein: 4,  carbs: 16, fat: 9,  dryFruit:"🌰 Almonds · Walnuts · Figs" },
+    breakfast:  { meal: "Masala oats (80g) + 200g curd + 1 fruit + 1 tbsp flaxseed", cals: 390, protein: 18, carbs: 58, fat: 9,  dryFruit:null },
+    midMorning: { meal: "Protein smoothie: 250ml milk + 30g whey + 1 banana + 1 tbsp PB + 10 pistachios", cals: 400, protein: 32, carbs: 42, fat: 12, dryFruit:"🟢 Pistachios blended in smoothie — extra protein + texture" },
+    lunch:      { meal: "2 multigrain roti + paneer makhani (150g, less cream) + salad + raita", cals: 530, protein: 28, carbs: 48, fat: 18, dryFruit:null },
+    preworkout: { meal: "Rest day — 1 apple + black coffee", cals: 90,  protein: 0,  carbs: 22, fat: 0,  dryFruit:null },
+    postworkout:{ meal: "250g Greek yogurt + 1 tbsp honey + mixed seeds", cals: 200, protein: 16, carbs: 22, fat: 6,  dryFruit:null },
+    dinner:     { meal: "Moong dal khichdi (1.5 cup) + 100g curd + mixed veg soup", cals: 380, protein: 18, carbs: 54, fat: 6,  dryFruit:null },
+    bedtime:    { meal: "300ml warm ashwagandha milk + 3 apricots + 2 figs + 4 cashews", cals: 200, protein: 10, carbs: 28, fat: 6,  dryFruit:"🍑 Triple dry fruit combo — best recovery night of the week" },
+  },
+};
+
+const mealSlots = [
+  { key:"wakeup",      label:"Wake Up",       icon:"🌅", time:"6:00 AM"  },
+  { key:"breakfast",   label:"Breakfast",     icon:"🍽️", time:"7:30 AM"  },
+  { key:"midMorning",  label:"Mid-Morning",   icon:"🥛", time:"10:30 AM" },
+  { key:"lunch",       label:"Lunch",         icon:"🫓", time:"1:00 PM"  },
+  { key:"preworkout",  label:"Pre-Workout",   icon:"⚡", time:"4:30 PM"  },
+  { key:"postworkout", label:"Post-Workout",  icon:"💪", time:"6:30 PM"  },
+  { key:"dinner",      label:"Dinner",        icon:"🥗", time:"8:00 PM"  },
+  { key:"bedtime",     label:"Bedtime",       icon:"🌙", time:"10:30 PM" },
+];
+
+const dryFruitGuide = [
+  { name:"Almonds",    emoji:"🌰", amount:"10–12/day", when:"Morning (soaked)",    why:"Vit E, healthy fat, curbs hunger",      cal:"70 kcal", protein:"3g" },
+  { name:"Walnuts",    emoji:"🌰", amount:"4–5 halves",when:"Morning (soaked)",    why:"Omega-3, reduces inflammation",         cal:"52 kcal", protein:"1g" },
+  { name:"Pistachios", emoji:"🟢", amount:"15–20/day", when:"Mid-morning snack",  why:"Highest protein among dry fruits",      cal:"80 kcal", protein:"3g" },
+  { name:"Cashews",    emoji:"🥜", amount:"4–5/day",   when:"Bedtime only",       why:"Magnesium for muscle recovery + sleep", cal:"44 kcal", protein:"1g" },
+  { name:"Dates",      emoji:"📅", amount:"1–2 max",   when:"Pre-workout ONLY",   why:"Fast energy, iron, natural sugar",      cal:"66 kcal", protein:"0g" },
+  { name:"Raisins",    emoji:"🍇", amount:"1 tbsp",    when:"Pre-workout ONLY",   why:"Quick carbs for gym performance",       cal:"45 kcal", protein:"0g" },
+  { name:"Figs (Anjeer)",emoji:"🍑",amount:"2 soaked", when:"Morning or bedtime", why:"Fibre, calcium, gut + bone health",     cal:"60 kcal", protein:"1g" },
+  { name:"Apricots",   emoji:"🍑", amount:"3–4/day",   when:"Morning or bedtime", why:"Potassium, prevents cramps, iron",      cal:"48 kcal", protein:"1g" },
+];
+
+const rules = [
+  "Always soak almonds, walnuts & figs overnight — improves nutrient absorption",
+  "Dates & raisins ONLY pre-workout — they spike blood sugar, bad at other times",
+  "Cashews at bedtime only — magnesium promotes deep sleep & muscle repair",
+  "Never eat salted, roasted, or sugar-coated dry fruits",
+  "Total dry fruit calories: ~300–350 kcal/day already included in your targets",
+];
+
+function DietPlan() {
+  const [activeDay, setActiveDay] = useState("Monday");
+  const [tab, setTab] = useState("plan"); // plan | dryfruits
+  const [showDryFruit, setShowDryFruit] = useState(true);
+  const plan = mealPlan[activeDay];
+
+  const totalCals    = Object.values(plan).reduce((s,m) => s + m.cals, 0);
+  const totalProtein = Object.values(plan).reduce((s,m) => s + m.protein, 0);
+  const totalCarbs   = Object.values(plan).reduce((s,m) => s + m.carbs, 0);
+  const totalFat     = Object.values(plan).reduce((s,m) => s + m.fat, 0);
+
+  return (
+    <div style={{
+      minHeight:"100vh",
+      background:"#0e1a0c",
+      fontFamily:"'Trebuchet MS', sans-serif",
+      color:"#e2f0d8",
+    }}>
+      {/* Header */}
+      <div style={{
+        background:"linear-gradient(135deg,#1a3a10,#2a5a18,#1a3a10)",
+        borderBottom:"3px solid #5aad30",
+        padding:"22px 16px 18px",
+      }}>
+        <div style={{ maxWidth:700, margin:"0 auto" }}>
+          <div style={{ fontSize:10, letterSpacing:5, color:"#7cd44a", textTransform:"uppercase", marginBottom:4 }}>Personalised · v2 with Dry Fruits</div>
+          <h1 style={{ margin:0, fontSize:"clamp(18px,5vw,30px)", color:"#f0fce8", letterSpacing:1 }}>
+            Indian Veg Diet + Dry Fruits 🌰
+          </h1>
+          <p style={{ margin:"5px 0 14px", color:"#9acc70", fontSize:12 }}>82 kg · 5'10" · 26 yrs · Fat Loss + Muscle Building</p>
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            {[
+              ["🎯",`~${STATS.targetCals} kcal`,"Daily target","#7cd44a"],
+              ["💪","123g","Protein target","#90d4f0"],
+              ["🌰","~320 kcal","From dry fruits","#ffd070"],
+              ["📉","−0.5kg/wk","Fat loss rate","#f08888"],
+            ].map(([icon,val,sub,col])=>(
+              <div key={sub} style={{
+                background:"rgba(0,0,0,0.3)", border:`1px solid ${col}44`,
+                borderTop:`3px solid ${col}`, borderRadius:10,
+                padding:"9px 12px", flex:"1 1 100px",
+              }}>
+                <div style={{ fontSize:15 }}>{icon}</div>
+                <div style={{ fontSize:14, fontWeight:700, color:col }}>{val}</div>
+                <div style={{ fontSize:10, color:"#7a9a60" }}>{sub}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{ display:"flex", borderBottom:"2px solid rgba(92,160,50,0.2)", background:"rgba(0,0,0,0.2)" }}>
+        {[["plan","📅 Meal Plan"],["dryfruits","🌰 Dry Fruit Guide"]].map(([t,label])=>(
+          <button key={t} onClick={()=>setTab(t)} style={{
+            flex:1, padding:"12px 8px",
+            background: tab===t ? "rgba(92,160,50,0.2)" : "transparent",
+            border:"none", borderBottom: tab===t ? "3px solid #7cd44a" : "3px solid transparent",
+            color: tab===t ? "#c8f09a" : "#6a9a50",
+            cursor:"pointer", fontSize:13, fontWeight: tab===t ? 700 : 400,
+          }}>{label}</button>
+        ))}
+      </div>
+
+      <div style={{ maxWidth:700, margin:"0 auto", padding:"14px 14px" }}>
+
+        {tab === "plan" && (<>
+          {/* Day Tabs */}
+          <div style={{ display:"flex", gap:5, overflowX:"auto", paddingBottom:4, marginBottom:14 }}>
+            {days.map(d=>(
+              <button key={d} onClick={()=>setActiveDay(d)} style={{
+                padding:"6px 13px", borderRadius:30,
+                border: activeDay===d ? "2px solid #7cd44a" : "2px solid rgba(92,160,50,0.3)",
+                background: activeDay===d ? "linear-gradient(135deg,#2d6a14,#4aaa28)" : "rgba(255,255,255,0.04)",
+                color: activeDay===d ? "#f0fce8" : "#7aaa50",
+                fontWeight: activeDay===d ? 700 : 400,
+                cursor:"pointer", fontSize:12, whiteSpace:"nowrap",
+              }}>{d.slice(0,3)}</button>
+            ))}
+          </div>
+
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10 }}>
+            <h2 style={{ margin:0, color:"#a8d87a", fontSize:15, fontWeight:600 }}>{activeDay}</h2>
+            <button onClick={()=>setShowDryFruit(v=>!v)} style={{
+              background: showDryFruit ? "rgba(255,180,0,0.15)" : "rgba(255,255,255,0.05)",
+              border:"1px solid rgba(255,180,0,0.3)",
+              borderRadius:20, color:"#ffd070",
+              padding:"5px 12px", fontSize:11, cursor:"pointer",
+            }}>
+              🌰 {showDryFruit ? "Hide" : "Show"} Dry Fruit Tips
+            </button>
+          </div>
+
+          {/* Meal Cards */}
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {mealSlots.map(({ key, label, icon, time })=>{
+              const m = plan[key];
+              return (
+                <div key={key} style={{
+                  background:"linear-gradient(135deg,rgba(30,60,18,0.7),rgba(16,36,10,0.9))",
+                  border:"1px solid rgba(92,160,50,0.3)",
+                  borderLeft: m.dryFruit ? "4px solid #ffd060" : "4px solid #4aaa28",
+                  borderRadius:14, padding:"13px 15px",
+                  display:"flex", gap:12, alignItems:"flex-start",
+                }}>
+                  <div style={{
+                    minWidth:38, height:38,
+                    background:"rgba(92,160,50,0.15)", border:"1px solid rgba(92,160,50,0.3)",
+                    borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18,
+                  }}>{icon}</div>
+                  <div style={{ flex:1 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:4, marginBottom:3 }}>
+                      <div>
+                        <span style={{ fontWeight:700, fontSize:13, color:"#c8f09a" }}>{label}</span>
+                        <span style={{ marginLeft:7, fontSize:11, color:"#5aad30" }}>{time}</span>
+                      </div>
+                      <div style={{ display:"flex", gap:5 }}>
+                        <span style={{ background:"rgba(255,200,60,0.15)", border:"1px solid rgba(255,200,60,0.3)", borderRadius:20, padding:"2px 8px", fontSize:11, color:"#ffd060" }}>🔥{m.cals}</span>
+                        <span style={{ background:"rgba(120,220,100,0.15)", border:"1px solid rgba(120,220,100,0.3)", borderRadius:20, padding:"2px 8px", fontSize:11, color:"#90e070" }}>P:{m.protein}g</span>
+                      </div>
+                    </div>
+                    <p style={{ margin:0, fontSize:13, color:"#c8e0a8", lineHeight:1.5 }}>{m.meal}</p>
+                    {showDryFruit && m.dryFruit && (
+                      <div style={{
+                        marginTop:7, background:"rgba(255,200,60,0.1)",
+                        border:"1px solid rgba(255,200,60,0.25)", borderRadius:8,
+                        padding:"6px 10px", fontSize:11, color:"#ffd07a", lineHeight:1.5,
+                      }}>
+                        🌰 {m.dryFruit}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Totals */}
+          <div style={{
+            marginTop:14, background:"linear-gradient(135deg,#1e4a10,#2a6018)",
+            border:"2px solid #5aad30", borderRadius:16, padding:"14px 16px",
+          }}>
+            <div style={{ fontSize:10, color:"#7cd44a", letterSpacing:3, textTransform:"uppercase", marginBottom:10 }}>
+              Daily Totals — {activeDay}
+            </div>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              {[
+                ["🔥 Calories",`${totalCals}kcal`, totalCals<=1980?"#7cd44a":"#ffd060"],
+                ["💪 Protein", `${totalProtein}g`, totalProtein>=118?"#7cd44a":"#ffd060"],
+                ["🌾 Carbs",   `${totalCarbs}g`,   "#f0c060"],
+                ["🫒 Fat",     `${totalFat}g`,     "#f09060"],
+              ].map(([label,val,col])=>(
+                <div key={label} style={{ flex:"1 1 90px", textAlign:"center" }}>
+                  <div style={{ fontSize:10, color:"#7a9a60", marginBottom:2 }}>{label}</div>
+                  <div style={{ fontSize:18, fontWeight:700, color:col }}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>)}
+
+        {tab === "dryfruits" && (<>
+          <h3 style={{ color:"#ffd070", fontSize:15, marginBottom:4, fontWeight:600 }}>🌰 Your Dry Fruit Schedule</h3>
+          <p style={{ color:"#8ab870", fontSize:12, marginBottom:14, lineHeight:1.6 }}>
+            Calibrated for 82 kg body weight. Total ~320 kcal/day — already counted in your 1,900 kcal target.
+          </p>
+
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {dryFruitGuide.map(df=>(
+              <div key={df.name} style={{
+                background:"linear-gradient(135deg,rgba(50,30,10,0.7),rgba(30,18,6,0.9))",
+                border:"1px solid rgba(255,190,60,0.3)",
+                borderLeft:"4px solid #ffd060",
+                borderRadius:14, padding:"13px 15px",
+                display:"flex", gap:12, alignItems:"flex-start",
+              }}>
+                <div style={{
+                  fontSize:24, minWidth:42, height:42,
+                  background:"rgba(255,190,60,0.1)", border:"1px solid rgba(255,190,60,0.2)",
+                  borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center",
+                }}>{df.emoji}</div>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:4, marginBottom:4 }}>
+                    <span style={{ fontWeight:700, fontSize:14, color:"#ffd070" }}>{df.name}</span>
+                    <div style={{ display:"flex", gap:5 }}>
+                      <span style={{ background:"rgba(255,200,60,0.15)", border:"1px solid rgba(255,200,60,0.3)", borderRadius:20, padding:"2px 8px", fontSize:11, color:"#ffd060" }}>🔥{df.cal}</span>
+                      <span style={{ background:"rgba(120,220,100,0.15)", border:"1px solid rgba(120,220,100,0.3)", borderRadius:20, padding:"2px 8px", fontSize:11, color:"#90e070" }}>P:{df.protein}</span>
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:5 }}>
+                    <span style={{ background:"rgba(92,160,50,0.15)", border:"1px solid rgba(92,160,50,0.25)", borderRadius:6, padding:"2px 8px", fontSize:11, color:"#a8d87a" }}>
+                      📏 {df.amount}
+                    </span>
+                    <span style={{ background:"rgba(144,200,240,0.1)", border:"1px solid rgba(144,200,240,0.25)", borderRadius:6, padding:"2px 8px", fontSize:11, color:"#90d4f0" }}>
+                      ⏰ {df.when}
+                    </span>
+                  </div>
+                  <p style={{ margin:0, fontSize:12, color:"#c0d8a0", lineHeight:1.5 }}>✓ {df.why}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Rules */}
+          <div style={{
+            marginTop:18,
+            background:"rgba(255,80,80,0.06)",
+            border:"1px solid rgba(255,80,80,0.2)",
+            borderRadius:14, padding:"14px 16px",
+          }}>
+            <div style={{ fontSize:12, color:"#f08888", letterSpacing:2, textTransform:"uppercase", marginBottom:10 }}>
+              ⚠ Golden Rules
+            </div>
+            {rules.map((r,i)=>(
+              <div key={i} style={{ display:"flex", gap:8, marginBottom:8, alignItems:"flex-start" }}>
+                <div style={{ color:"#f08888", fontSize:13, flexShrink:0, marginTop:1 }}>→</div>
+                <p style={{ margin:0, fontSize:12, color:"#d0b8a0", lineHeight:1.5 }}>{r}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Daily dry fruit summary */}
+          <div style={{
+            marginTop:14,
+            background:"rgba(255,200,60,0.06)",
+            border:"1px solid rgba(255,200,60,0.2)",
+            borderRadius:14, padding:"14px 16px",
+          }}>
+            <div style={{ fontSize:12, color:"#ffd060", letterSpacing:2, textTransform:"uppercase", marginBottom:10 }}>
+              📊 Daily Dry Fruit Snapshot
+            </div>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              {[["~320","Total kcal","#ffd060"],["~10g","Extra protein","#90e070"],["~8g","Healthy fat","#f09060"],["~35g","Fibre + carbs","#f0c060"]].map(([v,l,c])=>(
+                <div key={l} style={{ flex:"1 1 80px", textAlign:"center" }}>
+                  <div style={{ fontSize:20, fontWeight:700, color:c }}>{v}</div>
+                  <div style={{ fontSize:10, color:"#7a9a60" }}>{l}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>)}
+
+        <p style={{ textAlign:"center", marginTop:20, fontSize:10, color:"#4a6a34", lineHeight:1.7 }}>
+          All dry fruit calories are included within your 1,900 kcal daily target.<br/>
+          Consult a nutritionist for fully personalised advice.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+if (typeof DietPlan !== 'undefined') root.render(<DietPlan />);
+  else if (typeof App !== 'undefined') root.render(<App />);
+  else if (typeof Main !== 'undefined') root.render(<Main />);
+  else if (typeof Page !== 'undefined') root.render(<Page />);
+  else if (typeof Home !== 'undefined') root.render(<Home />);
+  else if (typeof Dashboard !== 'undefined') root.render(<Dashboard />);
+</script>
+</body>
+</html>
