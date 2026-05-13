@@ -6,7 +6,13 @@ const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { marked } = require(path.join(__dirname, "node_modules", "marked", "lib", "marked.umd.js"));
+let marked;
+async function ensureMarked() {
+  if (marked) return marked;
+  const mod = await import("marked");
+  marked = mod.marked || mod.default || mod;
+  return marked;
+}
 
 const app = express();
 app.use(express.json({ limit: "10mb" }));
@@ -326,8 +332,9 @@ ${renderChecks}
 </html>`;
 }
 
-function wrapMarkdown(mdSource, title) {
-  const htmlBody = marked.parse(mdSource);
+async function wrapMarkdown(mdSource, title) {
+  const markedLib = await ensureMarked();
+  const htmlBody = markedLib.parse(mdSource);
   const encoded = Buffer.from(mdSource).toString("base64");
   return `<!DOCTYPE html>
 <!-- page-type:md -->
@@ -481,7 +488,7 @@ app.get("/api/pages", (req, res) => {
 });
 
 // Publish / update a page
-app.post("/api/pages", requireAuth, (req, res) => {
+app.post("/api/pages", requireAuth, async (req, res) => {
   let { slug, html, access } = req.body;
   if (!slug || !html)
     return res.status(400).json({ error: "slug and html are required" });
@@ -508,7 +515,7 @@ app.post("/api/pages", requireAuth, (req, res) => {
     content = wrapJsx(html, titleMatch ? titleMatch[1] || titleMatch[2] : slug);
   } else if (type === "md") {
     const headingMatch = html.match(/^#\s+(.+)$/m);
-    content = wrapMarkdown(html, headingMatch ? headingMatch[1].trim() : slug);
+    content = await wrapMarkdown(html, headingMatch ? headingMatch[1].trim() : slug);
   }
 
   fs.writeFileSync(path.join(PAGES_DIR, `${slug}.html`), content, "utf8");

@@ -21,3 +21,4 @@ coverage/
 *.suo
 *.ntvs*
 *.njsproj
+.vercel
