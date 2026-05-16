@@ -42,6 +42,24 @@ npm run dev
 
 ---
 
+## Environment variables
+
+Create a local `.env` file or set these values in Vercel:
+
+```env
+SESSION_SECRET=your-secure-session-secret-here
+REDIS_URL=redis://127.0.0.1:6379
+GOOGLE_CLIENT_ID=your-google-client-id-here
+GOOGLE_CLIENT_SECRET=your-google-client-secret-here
+PUBLISHER_PASSWORD=shipfast
+```
+
+- `SESSION_SECRET` is required and must stay stable across deployments.
+- `REDIS_URL` is required for persistent session storage. Upstash Redis works with the same URL format.
+- `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` enable Google login.
+
+---
+
 ## How to use
 
 1. Ask Claude to build any HTML page

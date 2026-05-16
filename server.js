@@ -1,11 +1,12 @@
 const express = require("express");
 require("dotenv").config();
 const session = require("express-session");
+const RedisStore = require("connect-redis").default;
+const { createClient } = require("redis");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto");
 let marked;
 async function ensureMarked() {
   if (marked) return marked;
@@ -15,6 +16,7 @@ async function ensureMarked() {
 }
 
 const app = express();
+app.set("trust proxy", 1);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
 
@@ -24,21 +26,41 @@ if (!fs.existsSync(PAGES_DIR)) fs.mkdirSync(PAGES_DIR, { recursive: true });
 // ── Config ────────────────────────────────────────────────────────────────
 
 const PUBLISHER_PASSWORD = process.env.PUBLISHER_PASSWORD || "shipfast";
-const SESSION_SECRET = process.env.SESSION_SECRET || crypto.randomBytes(32).toString("hex");
+const SESSION_SECRET = process.env.SESSION_SECRET;
+const REDIS_URL = process.env.REDIS_URL;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_AUTH_ENABLED = !!(GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET &&
   GOOGLE_CLIENT_ID !== "your-google-client-id" &&
   GOOGLE_CLIENT_SECRET !== "your-google-client-secret");
 
+if (!SESSION_SECRET) {
+  throw new Error("SESSION_SECRET is required. Set it in .env or Vercel environment variables.");
+}
+if (!REDIS_URL) {
+  throw new Error("REDIS_URL is required. Set it in .env or Vercel environment variables.");
+}
+
+const redisClient = createClient({ url: REDIS_URL });
+redisClient.on("error", (err) => console.error("Redis Client Error", err));
+redisClient.connect().catch((err) => console.error("Redis connection failed:", err));
+
 // ── Session + Passport ───────────────────────────────────────────────────
 
-app.use(session({
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { httpOnly: true, sameSite: "lax", maxAge: 7 * 24 * 60 * 60 * 1000 },
-}));
+app.use(
+  session({
+    store: new RedisStore({ client: redisClient }),
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    },
+  })
+);
 app.use(passport.initialize());
 app.use(passport.session());
 
