@@ -5,8 +5,7 @@ const RedisStore = require("connect-redis").default;
 const { createClient } = require("redis");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
-const fs = require("fs");
-const path = require("path");
+
 let marked;
 async function ensureMarked() {
   if (marked) return marked;
@@ -19,9 +18,6 @@ const app = express();
 app.set("trust proxy", 1);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
-
-const PAGES_DIR = path.join(__dirname, "pages");
-if (!fs.existsSync(PAGES_DIR)) fs.mkdirSync(PAGES_DIR, { recursive: true });
 
 // ── Config ────────────────────────────────────────────────────────────────
 
@@ -44,6 +40,55 @@ if (!REDIS_URL) {
 const redisClient = createClient({ url: REDIS_URL });
 redisClient.on("error", (err) => console.error("Redis Client Error", err));
 redisClient.connect().catch((err) => console.error("Redis connection failed:", err));
+
+// S3 initialization - required
+const { S3Client, GetObjectCommand, PutObjectCommand, ListObjectsV2Command, DeleteObjectCommand } = require("@aws-sdk/client-s3");
+const S3_BUCKET = process.env.S3_BUCKET;
+if (!S3_BUCKET) {
+  throw new Error("S3_BUCKET is required since local storage is disabled.");
+}
+const S3_REGION = process.env.S3_REGION || process.env.AWS_REGION;
+const s3Client = new S3Client({ region: S3_REGION });
+
+async function streamToString(stream) {
+  if (!stream) return null;
+  return await new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on("data", (chunk) => chunks.push(Buffer.from(chunk)));
+    stream.on("error", reject);
+    stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+  });
+}
+
+async function s3GetText(key) {
+  try {
+    const out = await s3Client.send(new GetObjectCommand({ Bucket: S3_BUCKET, Key: key }));
+    return await streamToString(out.Body);
+  } catch (err) {
+    return null;
+  }
+}
+
+async function s3PutText(key, text) {
+  try {
+    await s3Client.send(new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, Body: text, ContentType: 'text/plain; charset=utf-8' }));
+  } catch (e) {
+    console.error('s3PutText error', e);
+  }
+}
+
+async function s3Delete(key) {
+  try {
+    await s3Client.send(new DeleteObjectCommand({ Bucket: S3_BUCKET, Key: key }));
+  } catch (e) { console.error('s3Delete error', e); }
+}
+
+async function s3List(prefix) {
+  try {
+    const out = await s3Client.send(new ListObjectsV2Command({ Bucket: S3_BUCKET, Prefix: prefix }));
+    return (out.Contents || []).map(c => ({ Key: c.Key, LastModified: c.LastModified, Size: c.Size }));
+  } catch (e) { console.error('s3List error', e); return []; }
+}
 
 // ── Session + Passport ───────────────────────────────────────────────────
 
@@ -72,7 +117,7 @@ if (GOOGLE_AUTH_ENABLED) {
     clientID: GOOGLE_CLIENT_ID,
     clientSecret: GOOGLE_CLIENT_SECRET,
     callbackURL: "/auth/google/callback",
-  }, (_accessToken, _refreshToken, profile, done) => {
+  }, async (_accessToken, _refreshToken, profile, done) => {
     const user = {
       id: "google-" + profile.id,
       displayName: profile.displayName,
@@ -80,7 +125,7 @@ if (GOOGLE_AUTH_ENABLED) {
       avatar: (profile.photos && profile.photos[0] && profile.photos[0].value) || "",
       role: "publisher",
     };
-    upsertUser(user);
+    await upsertUser(user);
     done(null, user);
   }));
 } else {
@@ -98,11 +143,12 @@ function isAdmin(req) {
   return u && u.role === "admin";
 }
 
-function canManagePage(req, slug) {
+async function canManagePage(req, slug) {
   const u = getCurrentUser(req);
   if (!u) return false;
   if (u.role === "admin") return true;
-  return getPageMeta(slug).owner === u.id;
+  const meta = await getPageMeta(slug);
+  return meta.owner === u.id;
 }
 
 function requireAuth(req, res, next) {
@@ -112,141 +158,108 @@ function requireAuth(req, res, next) {
   res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
 }
 
-function requirePageOwner(req, res, next) {
+async function requirePageOwner(req, res, next) {
   if (!getCurrentUser(req)) {
     if (req.path.startsWith("/api/")) return res.status(401).json({ error: "Unauthorized" });
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
-  if (!canManagePage(req, req.params.slug)) {
+  if (!(await canManagePage(req, req.params.slug))) {
     return res.status(403).json({ error: "You can only manage your own pages" });
   }
   next();
 }
 
-// ── User data (file-based) ───────────────────────────────────────────────
+// ── User data (S3-based) ───────────────────────────────────────────────
 
-const USERS_FILE = path.join(PAGES_DIR, "users.json");
-
-function readUsers() {
-  if (!fs.existsSync(USERS_FILE)) return {};
-  try { return JSON.parse(fs.readFileSync(USERS_FILE, "utf8")); } catch { return {}; }
+async function readUsers() {
+  const txt = await s3GetText("users.json");
+  if (!txt) return {};
+  try { return JSON.parse(txt); } catch { return {}; }
 }
 
-function writeUsers(obj) {
-  fs.writeFileSync(USERS_FILE, JSON.stringify(obj, null, 2), "utf8");
+async function writeUsers(obj) {
+  const txt = JSON.stringify(obj, null, 2);
+  await s3PutText("users.json", txt);
 }
 
-function upsertUser(user) {
-  const users = readUsers();
+async function upsertUser(user) {
+  const users = await readUsers();
   users[user.id] = { ...users[user.id], ...user, lastLogin: new Date().toISOString() };
   if (!users[user.id].createdAt) users[user.id].createdAt = new Date().toISOString();
-  writeUsers(users);
+  await writeUsers(users);
 }
 
-function getUserDisplayName(userId) {
+async function getUserDisplayName(userId) {
   if (userId === "admin") return "Admin";
-  const users = readUsers();
+  const users = await readUsers();
   return (users[userId] && users[userId].displayName) || userId;
 }
 
 // ── Page metadata (access + ownership) ───────────────────────────────────
 
-const META_FILE = path.join(PAGES_DIR, "meta.json");
-
-function readMeta() {
-  if (!fs.existsSync(META_FILE)) return {};
-  try { return JSON.parse(fs.readFileSync(META_FILE, "utf8")); } catch { return {}; }
+async function readMeta() {
+  const txt = await s3GetText("meta.json");
+  if (!txt) return {};
+  try { return JSON.parse(txt); } catch { return {}; }
 }
 
-function writeMeta(obj) {
-  fs.writeFileSync(META_FILE, JSON.stringify(obj, null, 2), "utf8");
+async function writeMeta(obj) {
+  const txt = JSON.stringify(obj, null, 2);
+  await s3PutText("meta.json", txt);
 }
 
-function getPageMeta(slug) {
-  const entry = readMeta()[slug];
+async function getPageMeta(slug) {
+  const meta = await readMeta();
+  const entry = meta[slug];
   if (!entry) return { access: "publisher", owner: "admin" };
   if (typeof entry === "string") return { access: entry, owner: "admin" };
   return entry;
 }
 
-function setPageMeta(slug, updates) {
-  const meta = readMeta();
+async function setPageMeta(slug, updates) {
+  const meta = await readMeta();
   const existing = meta[slug];
   const prev = !existing ? { access: "publisher", owner: "admin" }
     : typeof existing === "string" ? { access: existing, owner: "admin" }
     : existing;
   meta[slug] = { ...prev, ...updates };
-  writeMeta(meta);
+  await writeMeta(meta);
 }
 
-function deletePageMeta(slug) {
-  const meta = readMeta();
+async function deletePageMeta(slug) {
+  const meta = await readMeta();
   delete meta[slug];
-  writeMeta(meta);
+  await writeMeta(meta);
 }
 
-function getAccess(slug) {
-  return getPageMeta(slug).access || "publisher";
+async function getAccess(slug) {
+  const pm = await getPageMeta(slug);
+  return pm.access || "publisher";
 }
-
-function migrateMeta() {
-  const meta = readMeta();
-  let changed = false;
-  for (const [slug, value] of Object.entries(meta)) {
-    if (typeof value === "string") {
-      meta[slug] = { access: value, owner: "admin", createdAt: new Date().toISOString() };
-      changed = true;
-    }
-  }
-  if (fs.existsSync(PAGES_DIR)) {
-    for (const f of fs.readdirSync(PAGES_DIR).filter(f => f.endsWith(".html"))) {
-      const slug = f.replace(".html", "");
-      if (!meta[slug]) {
-        meta[slug] = { access: "publisher", owner: "admin", createdAt: new Date().toISOString() };
-        changed = true;
-      }
-    }
-  }
-  if (changed) writeMeta(meta);
-}
-
-migrateMeta();
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function listPages() {
-  if (!fs.existsSync(PAGES_DIR)) return [];
-  return fs
-    .readdirSync(PAGES_DIR)
-    .filter((f) => f.endsWith(".html"))
-    .map((f) => {
-      const slug = f.replace(".html", "");
-      const stat = fs.statSync(path.join(PAGES_DIR, f));
-      const raw = fs.readFileSync(path.join(PAGES_DIR, f), "utf8");
-      const titleMatch = raw.match(/<title[^>]*>([^<]+)<\/title>/i);
-      const title = titleMatch ? titleMatch[1].trim() : slug;
-      const metaDesc = raw.match(
-        /<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i
-      );
-      let description = metaDesc ? metaDesc[1].trim() : "";
-      if (!description) {
-        const pMatch = raw.match(/<p[^>]*>([^<]{10,})<\/p>/i);
-        if (pMatch) description = pMatch[1].trim();
-      }
-      if (description.length > 150)
-        description = description.slice(0, 147) + "...";
-      const pageType = raw.includes("<!-- page-type:jsx -->") ? "jsx"
-        : raw.includes("<!-- page-type:md -->") ? "md" : "html";
-      const pm = getPageMeta(slug);
-      return {
-        slug, title, description, type: pageType,
-        access: pm.access || "publisher",
-        owner: pm.owner || "admin",
-        ownerName: getUserDisplayName(pm.owner || "admin"),
-        updated: stat.mtime.toISOString(),
-      };
-    })
-    .sort((a, b) => new Date(b.updated) - new Date(a.updated));
+async function listPages() {
+  const meta = await readMeta();
+  const users = await readUsers();
+  const pages = [];
+  
+  for (const [slug, pm] of Object.entries(meta)) {
+    if (typeof pm === "string") continue; // Skip legacy unmigrated data
+    const ownerName = pm.owner === "admin" ? "Admin" : (users[pm.owner] && users[pm.owner].displayName) || pm.owner || "admin";
+    
+    pages.push({
+      slug,
+      title: pm.title || slug,
+      description: pm.description || "",
+      type: pm.type || "html",
+      access: pm.access || "publisher",
+      owner: pm.owner || "admin",
+      ownerName: ownerName,
+      updated: pm.updated || pm.createdAt || new Date(0).toISOString(),
+    });
+  }
+  return pages.sort((a, b) => new Date(b.updated) - new Date(a.updated));
 }
 
 function detectType(code) {
@@ -501,8 +514,8 @@ if (GOOGLE_AUTH_ENABLED) {
 // ── API ───────────────────────────────────────────────────────────────────
 
 // List pages (admin=all, publisher=own+public, anon=public)
-app.get("/api/pages", (req, res) => {
-  const pages = listPages();
+app.get("/api/pages", async (req, res) => {
+  const pages = await listPages();
   const user = getCurrentUser(req);
   if (!user) return res.json(pages.filter((p) => p.access === "public"));
   if (user.role === "admin") return res.json(pages);
@@ -523,43 +536,62 @@ app.post("/api/pages", requireAuth, async (req, res) => {
   if (!slug) return res.status(400).json({ error: "Invalid slug" });
 
   const user = getCurrentUser(req);
-  const existing = fs.existsSync(path.join(PAGES_DIR, `${slug}.html`));
-  if (existing && !canManagePage(req, slug)) {
+  const existingRaw = await s3GetText(`pages/${slug}.html`);
+  const existing = existingRaw !== null;
+  if (existing && !(await canManagePage(req, slug))) {
     return res.status(403).json({ error: "This slug is owned by another user" });
   }
 
   const type = detectType(html);
   let content = html;
+  
+  let title = slug;
+  let description = "";
+  
   if (type === "jsx") {
     const titleMatch = html.match(
       /(?:document\.title\s*=\s*['"]([^'"]+)['"]|<title>([^<]+)<\/title>)/
     );
-    content = wrapJsx(html, titleMatch ? titleMatch[1] || titleMatch[2] : slug);
+    title = titleMatch ? titleMatch[1] || titleMatch[2] : slug;
+    content = wrapJsx(html, title);
   } else if (type === "md") {
     const headingMatch = html.match(/^#\s+(.+)$/m);
-    content = await wrapMarkdown(html, headingMatch ? headingMatch[1].trim() : slug);
+    title = headingMatch ? headingMatch[1].trim() : slug;
+    content = await wrapMarkdown(html, title);
+  } else {
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    title = titleMatch ? titleMatch[1].trim() : slug;
+    const metaDesc = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i);
+    if (metaDesc) description = metaDesc[1].trim();
+    if (!description) {
+      const pMatch = html.match(/<p[^>]*>([^<]{10,})<\/p>/i);
+      if (pMatch) description = pMatch[1].trim();
+    }
   }
+  
+  if (description.length > 150) description = description.slice(0, 147) + "...";
 
-  fs.writeFileSync(path.join(PAGES_DIR, `${slug}.html`), content, "utf8");
-  const updates = {};
+  await s3PutText(`pages/${slug}.html`, content);
+  
+  const updates = { title, description, type, updated: new Date().toISOString() };
   if (access === "publisher" || access === "public") updates.access = access;
   if (!existing) {
     updates.owner = user.id;
     updates.createdAt = new Date().toISOString();
   }
-  setPageMeta(slug, updates);
-  const pm = getPageMeta(slug);
+  await setPageMeta(slug, updates);
+  const pm = await getPageMeta(slug);
   res.json({ ok: true, slug, url: `/p/${slug}`, type, access: pm.access, owner: pm.owner });
 });
 
 // Get raw content (for editing — owner or admin only)
-app.get("/api/pages/:slug/raw", requireAuth, (req, res) => {
-  const file = path.join(PAGES_DIR, `${req.params.slug}.html`);
-  if (!fs.existsSync(file))
+app.get("/api/pages/:slug/raw", requireAuth, async (req, res) => {
+  const raw = await s3GetText(`pages/${req.params.slug}.html`);
+  if (raw === null)
     return res.status(404).json({ error: "Not found" });
-  if (!canManagePage(req, req.params.slug))
+  if (!(await canManagePage(req, req.params.slug)))
     return res.status(403).json({ error: "You can only edit your own pages" });
-  const raw = fs.readFileSync(file, "utf8");
+    
   const isJsx = raw.includes("<!-- page-type:jsx -->");
   const isMd = raw.includes("<!-- page-type:md -->");
   let source = raw;
@@ -573,51 +605,52 @@ app.get("/api/pages/:slug/raw", requireAuth, (req, res) => {
     const m = raw.match(/<!-- md-source:([A-Za-z0-9+/=]+) -->/);
     if (m) source = Buffer.from(m[1], "base64").toString("utf8");
   }
-  res.json({ slug: req.params.slug, type, source, access: getAccess(req.params.slug) });
+  const access = await getAccess(req.params.slug);
+  res.json({ slug: req.params.slug, type, source, access });
 });
 
 // Check if slug exists (+ ownership info for authenticated users)
-app.get("/api/pages/:slug/exists", (req, res) => {
-  const file = path.join(PAGES_DIR, `${req.params.slug}.html`);
-  const exists = fs.existsSync(file);
+app.get("/api/pages/:slug/exists", async (req, res) => {
+  const meta = await readMeta();
+  const exists = !!meta[req.params.slug];
   const result = { exists };
   if (exists && getCurrentUser(req)) {
-    result.canManage = canManagePage(req, req.params.slug);
+    result.canManage = await canManagePage(req, req.params.slug);
   }
   res.json(result);
 });
 
 // Update access level (owner or admin only)
-app.patch("/api/pages/:slug/access", requirePageOwner, (req, res) => {
+app.patch("/api/pages/:slug/access", requirePageOwner, async (req, res) => {
   const { access } = req.body;
   if (access !== "public" && access !== "publisher")
     return res.status(400).json({ error: "access must be 'public' or 'publisher'" });
-  const file = path.join(PAGES_DIR, `${req.params.slug}.html`);
-  if (!fs.existsSync(file))
+  const raw = await s3GetText(`pages/${req.params.slug}.html`);
+  if (raw === null)
     return res.status(404).json({ error: "Not found" });
-  setPageMeta(req.params.slug, { access });
+  await setPageMeta(req.params.slug, { access });
   res.json({ ok: true, slug: req.params.slug, access });
 });
 
 // Delete a page (owner or admin only)
-app.delete("/api/pages/:slug", requirePageOwner, (req, res) => {
-  const file = path.join(PAGES_DIR, `${req.params.slug}.html`);
-  if (!fs.existsSync(file))
+app.delete("/api/pages/:slug", requirePageOwner, async (req, res) => {
+  const raw = await s3GetText(`pages/${req.params.slug}.html`);
+  if (raw === null)
     return res.status(404).json({ error: "Not found" });
-  fs.unlinkSync(file);
-  deletePageMeta(req.params.slug);
+  await s3Delete(`pages/${req.params.slug}.html`);
+  await deletePageMeta(req.params.slug);
   res.json({ ok: true });
 });
 
 // ── Serve published pages ──────────────────────────────────────────────────
 
-app.get("/p/:slug", (req, res) => {
-  const file = path.join(PAGES_DIR, `${req.params.slug}.html`);
-  if (!fs.existsSync(file)) return res.status(404).send(notFoundHtml());
-  if (getAccess(req.params.slug) === "publisher" && !getCurrentUser(req)) {
+app.get("/p/:slug", async (req, res) => {
+  const html = await s3GetText(`pages/${req.params.slug}.html`);
+  if (html === null) return res.status(404).send(notFoundHtml());
+  const access = await getAccess(req.params.slug);
+  if (access === "publisher" && !getCurrentUser(req)) {
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
-  let html = fs.readFileSync(file, "utf8");
   const badge = `<a href="/" style="position:fixed;bottom:12px;right:12px;z-index:99999;
     background:rgba(12,10,9,.9);border:1px solid rgba(255,255,255,.08);
     backdrop-filter:blur(12px);border-radius:8px;padding:5px 10px;
@@ -628,9 +661,9 @@ app.get("/p/:slug", (req, res) => {
       background:linear-gradient(135deg,#f97316,#ef4444);
       display:inline-grid;place-items:center;font-size:8px">&#9889;</span>
     Shipfast</a>`;
-  html = html.replace("</body>", badge + "</body>");
+  const finalHtml = html.replace("</body>", badge + "</body>");
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(html);
+  res.send(finalHtml);
 });
 
 // ── Dashboard (root) ───────────────────────────────────────────────────────

@@ -52,11 +52,16 @@ REDIS_URL=redis://127.0.0.1:6379
 GOOGLE_CLIENT_ID=your-google-client-id-here
 GOOGLE_CLIENT_SECRET=your-google-client-secret-here
 PUBLISHER_PASSWORD=shipfast
+# Optional: S3 bucket for persistent storage
+S3_BUCKET=your-bucket-name
+S3_REGION=us-east-1
+# AWS credentials are read from environment (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY)
 ```
 
 - `SESSION_SECRET` is required and must stay stable across deployments.
 - `REDIS_URL` is required for persistent session storage. Upstash Redis works with the same URL format.
 - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` enable Google login.
+- `S3_BUCKET` (optional): when set, ShipFast will sync `pages/`, `meta.json` and `users.json` with the bucket. Configure `S3_REGION` and AWS credentials as usual.
 
 ---
 

@@ -15,7 +15,8 @@
     "marked": "^18.0.3",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
-    "redis": "^5.12.1"
+    "redis": "^5.12.1",
+    "@aws-sdk/client-s3": "^3.500.0"
   },
   "engines": {
     "node": ">=18"
