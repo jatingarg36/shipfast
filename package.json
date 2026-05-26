@@ -8,6 +8,7 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.500.0",
     "connect-redis": "^7.1.0",
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
@@ -16,7 +17,7 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "redis": "^5.12.1",
-    "@aws-sdk/client-s3": "^3.500.0"
+    "vercel": "^54.4.1"
   },
   "engines": {
     "node": ">=18"

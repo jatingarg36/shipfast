@@ -530,9 +530,14 @@ app.post("/api/pages", requireAuth, async (req, res) => {
 
   slug = slug
     .toLowerCase()
-    .replace(/[^a-z0-9-_]/g, "-")
-    .replace(/-+/g, "-")
-    .replace(/^-|-$/g, "");
+    .split('/')
+    .map(segment => segment
+      .replace(/[^a-z0-9-_]/g, "-")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "")
+    )
+    .filter(Boolean)
+    .join('/');
   if (!slug) return res.status(400).json({ error: "Invalid slug" });
 
   const user = getCurrentUser(req);
@@ -585,7 +590,7 @@ app.post("/api/pages", requireAuth, async (req, res) => {
 });
 
 // Get raw content (for editing — owner or admin only)
-app.get("/api/pages/:slug/raw", requireAuth, async (req, res) => {
+app.get("/api/pages/:slug(*)/raw", requireAuth, async (req, res) => {
   const raw = await s3GetText(`pages/${req.params.slug}.html`);
   if (raw === null)
     return res.status(404).json({ error: "Not found" });
@@ -610,7 +615,7 @@ app.get("/api/pages/:slug/raw", requireAuth, async (req, res) => {
 });
 
 // Check if slug exists (+ ownership info for authenticated users)
-app.get("/api/pages/:slug/exists", async (req, res) => {
+app.get("/api/pages/:slug(*)/exists", async (req, res) => {
   const meta = await readMeta();
   const exists = !!meta[req.params.slug];
   const result = { exists };
@@ -621,7 +626,7 @@ app.get("/api/pages/:slug/exists", async (req, res) => {
 });
 
 // Update access level (owner or admin only)
-app.patch("/api/pages/:slug/access", requirePageOwner, async (req, res) => {
+app.patch("/api/pages/:slug(*)/access", requirePageOwner, async (req, res) => {
   const { access } = req.body;
   if (access !== "public" && access !== "publisher")
     return res.status(400).json({ error: "access must be 'public' or 'publisher'" });
@@ -633,7 +638,7 @@ app.patch("/api/pages/:slug/access", requirePageOwner, async (req, res) => {
 });
 
 // Delete a page (owner or admin only)
-app.delete("/api/pages/:slug", requirePageOwner, async (req, res) => {
+app.delete("/api/pages/:slug(*)", requirePageOwner, async (req, res) => {
   const raw = await s3GetText(`pages/${req.params.slug}.html`);
   if (raw === null)
     return res.status(404).json({ error: "Not found" });
@@ -644,7 +649,7 @@ app.delete("/api/pages/:slug", requirePageOwner, async (req, res) => {
 
 // ── Serve published pages ──────────────────────────────────────────────────
 
-app.get("/p/:slug", async (req, res) => {
+app.get("/p/:slug(*)", async (req, res) => {
   const html = await s3GetText(`pages/${req.params.slug}.html`);
   if (html === null) return res.status(404).send(notFoundHtml());
   const access = await getAccess(req.params.slug);
@@ -1217,6 +1222,109 @@ kbd{
   .nav-stats{display:none}
   .features-grid{gap:1.25rem}
 }
+
+/* Segmented control for View Toggle */
+.view-toggle {
+  display: flex;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 2px;
+}
+.view-toggle button {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  padding: .35rem .75rem;
+  font-family: var(--sans);
+  font-size: .72rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all .15s ease;
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+.view-toggle button.active {
+  background: var(--surface3);
+  color: var(--text);
+}
+.view-toggle button:not(.active):hover {
+  color: var(--text2);
+}
+
+/* Breadcrumbs */
+.breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-bottom: 1.25rem;
+  font-size: .8rem;
+  color: var(--muted);
+  font-weight: 500;
+}
+.breadcrumbs a {
+  color: var(--muted);
+  text-decoration: none;
+  transition: color .15s;
+  cursor: pointer;
+}
+.breadcrumbs a:hover {
+  color: var(--accent2);
+}
+.breadcrumbs span.curr {
+  color: var(--text2);
+}
+.breadcrumbs .sep {
+  color: var(--muted2);
+  font-family: var(--mono);
+}
+
+/* Folder Card Styles */
+.folder-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: .85rem;
+  transition: all .25s cubic-bezier(.4,0,.2,1);
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  overflow: hidden;
+}
+.folder-card::after {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(249,115,22,.2), transparent);
+  opacity: 0; transition: opacity .25s;
+}
+.folder-card:hover {
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+  background: var(--surface2);
+}
+.folder-card:hover::after { opacity: 1; }
+.folder-icon {
+  width: 38px; height: 38px; border-radius: 8px; flex-shrink: 0;
+  background: rgba(249,115,22,.06); border: 1px solid rgba(249,115,22,.15);
+  display: grid; place-items: center; color: var(--accent2);
+}
+.folder-info {
+  flex: 1; min-width: 0;
+}
+.folder-name {
+  font-size: .88rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.folder-count {
+  font-size: .7rem; color: var(--muted); margin-top: .15rem;
+}
 </style>
 </head>
 <body>
@@ -1271,7 +1379,19 @@ kbd{
   </div>
 
   <div class="section-header" id="sectionHeader" style="display:none">
-    <div class="section-title">All Pages <span class="section-count" id="count"></span></div>
+    <div style="display:flex;align-items:center;gap:1rem">
+      <div class="section-title">All Pages <span class="section-count" id="count"></span></div>
+      <div class="view-toggle" id="viewToggle">
+        <button type="button" class="active" id="viewFolderBtn" onclick="setViewMode('folder')">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h5l2 3h7a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+          Folders
+        </button>
+        <button type="button" id="viewFlatBtn" onclick="setViewMode('flat')">
+          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Flat
+        </button>
+      </div>
+    </div>
     <div class="sort-wrap">
       <select class="sort-select" id="sortSelect">
         <option value="newest">Newest first</option>
@@ -1285,6 +1405,7 @@ kbd{
       </div>
     </div>
   </div>
+  <div id="breadcrumbs" style="display:none"></div>
   <div id="pagesList"></div>
 
   <div class="features" id="howSection">
@@ -1415,6 +1536,69 @@ let pendingDeleteSlug = null;
 let undoTimer = null;
 let editingSlug = null;
 let currentAccess = 'publisher';
+let currentViewMode = 'folder';
+let currentFolder = '';
+
+function getParentFolder(slug) {
+  const lastSlash = slug.lastIndexOf('/');
+  return lastSlash === -1 ? '' : slug.substring(0, lastSlash);
+}
+
+function getSubfolders(pages, folder) {
+  const subfolders = new Map();
+  pages.forEach(p => {
+    const prefix = folder ? folder + '/' : '';
+    if (p.slug.startsWith(prefix) && p.slug !== folder) {
+      const remaining = p.slug.substring(prefix.length);
+      const slashIdx = remaining.indexOf('/');
+      if (slashIdx !== -1) {
+        const folderName = remaining.substring(0, slashIdx);
+        subfolders.set(folderName, (subfolders.get(folderName) || 0) + 1);
+      }
+    }
+  });
+  return Array.from(subfolders.entries()).map(([name, count]) => ({ name, count }));
+}
+
+function setViewMode(mode) {
+  currentViewMode = mode;
+  document.getElementById('viewFlatBtn').classList.toggle('active', mode === 'flat');
+  document.getElementById('viewFolderBtn').classList.toggle('active', mode === 'folder');
+  renderBreadcrumbs();
+  renderPages(searchInput.value.trim().toLowerCase());
+}
+
+function navigateToFolder(path) {
+  currentFolder = path;
+  renderBreadcrumbs();
+  renderPages(searchInput.value.trim().toLowerCase());
+}
+
+function renderBreadcrumbs() {
+  const bc = document.getElementById('breadcrumbs');
+  if (currentViewMode !== 'folder') {
+    bc.style.display = 'none';
+    return;
+  }
+  bc.style.display = 'flex';
+  bc.className = 'breadcrumbs';
+  
+  let html = '<a onclick="navigateToFolder(\'\')">All Pages</a>';
+  if (currentFolder) {
+    const parts = currentFolder.split('/');
+    let path = '';
+    parts.forEach((part, index) => {
+      path += (path ? '/' : '') + part;
+      html += ' <span class="sep">&rarr;</span> ';
+      if (index === parts.length - 1) {
+        html += '<span class="curr">' + esc(part) + '</span>';
+      } else {
+        html += '<a onclick="navigateToFolder(\'' + path.replace(/'/g, "\\'") + '\')">' + esc(part) + '</a>';
+      }
+    });
+  }
+  bc.innerHTML = html;
+}
 
 function setAccessLevel(level) {
   currentAccess = level;
@@ -1423,7 +1607,13 @@ function setAccessLevel(level) {
   });
 }
 
-function slugify(s){ return s.toLowerCase().replace(/[^a-z0-9-_]/g,'-').replace(/-+/g,'-').replace(/^-|-$/g,''); }
+function slugify(s) {
+  return s.toLowerCase()
+    .split('/')
+    .map(seg => seg.replace(/[^a-z0-9-_]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, ''))
+    .filter(Boolean)
+    .join('/');
+}
 function detectType(code){
   const t=code.trim();
   if(/^\\s*<!doctype\\s+html/i.test(t)||/^\\s*<html[\\s>]/i.test(t)) return 'html';
@@ -1585,7 +1775,9 @@ async function publish(){
       document.querySelector('#modalStep2 h3').textContent=editingSlug?'Updated!':'Published!';
       editingSlug=null; loadPages();
     } else showToast(d.error||'Error','err');
-  }catch(err){showToast('Network error','err')}
+  }catch(err){
+    showToast('Network error','err');
+  }
   finally{publishBtn.classList.remove('loading');publishBtn.textContent='Publish'}
 }
 function copyUrl(){
@@ -1602,6 +1794,7 @@ function copyPageUrl(e,slug){
 }
 
 // ── Delete with undo ──
+let pendingDeleteSlug=null, undoTimer=null;
 function deletePage(e,slug){ e.stopPropagation();e.preventDefault(); pendingDeleteSlug=slug;
   document.getElementById('deleteSlugName').textContent='/p/'+slug;
   document.getElementById('deleteOverlay').classList.add('open');
@@ -1643,10 +1836,27 @@ function sortPages(pages){
   return arr;
 }
 
-// ── Render ──
-const clockSvg='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;opacity:.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
-const copySvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
-const editSvg='<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+function renderPageCardHtml(p) {
+  const ago = timeAgo(new Date(p.updated)), desc = p.description || 'A page shipped with Shipfast';
+  const mine = canManage(p);
+  return '<a class="card" href="/p/' + p.slug + '" target="_blank">' +
+    '<div class="card-body">' +
+      '<div class="card-thumb"><iframe src="/p/' + p.slug + '" loading="lazy" tabindex="-1"></iframe></div>' +
+      '<div class="card-title-wrap">' +
+        '<div class="card-title">' + esc(p.title) + '</div>' +
+        '<div class="card-slug-inline">/p/' + p.slug + (p.access==='publisher'?'<span class="lock-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Publisher</span>':'') + '</div>' +
+      '</div>' +
+      '<div class="card-desc">' + esc(desc) + '</div>' +
+      '<div class="card-footer">' +
+        '<div class="card-time">' + clockSvg + ' ' + ago + (p.ownerName?'<span style="margin-left:.3rem;color:var(--muted2)">by ' + esc(p.ownerName) + '</span>':'') + '</div>' +
+        '<div class="card-actions">' +
+          (mine?'<button class="btn-edit" onclick="editPage(event,\'' + p.slug + '\')">' + editSvg + ' Edit</button>':'') +
+          '<button class="btn-copy" onclick="copyPageUrl(event,\'' + p.slug + '\')">' + copySvg + ' Copy URL</button>' +
+          (mine?'<button class="btn btn-danger" onclick="deletePage(event,\'' + p.slug + '\')">Delete</button>':'') +
+        '</div>' +
+      '</div>' +
+    '</div></a>';
+}
 
 function renderPages(query){
   const el=document.getElementById('pagesList'),header=document.getElementById('sectionHeader');
@@ -1661,44 +1871,81 @@ function renderPages(query){
 
   if(!allPages.length){
     header.style.display='none';
-    el.innerHTML=\`<div class="empty-state">
-      <div class="empty-icon">\\u{1F4C4}</div><h3>No pages yet</h3>
-      <p>\${IS_LOGGED_IN?'Ship your first page and it will appear here.':'No public pages have been published yet.'}</p>
-      \${IS_LOGGED_IN?'<button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg> Publish your first page</button>':''}</div>\`;
+    document.getElementById('breadcrumbs').style.display='none';
+    el.innerHTML='<div class="empty-state">' +
+      '<div class="empty-icon">&#128196;</div><h3>No pages yet</h3>' +
+      '<p>' + (IS_LOGGED_IN?'Ship your first page and it will appear here.':'No public pages have been published yet.') + '</p>' +
+      (IS_LOGGED_IN?'<button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg> Publish your first page</button>':'') + '</div>';
     return;
   }
 
-  let filtered=query?allPages.filter(p=>p.title.toLowerCase().includes(query)||p.slug.includes(query)||(p.description||'').toLowerCase().includes(query)):allPages;
-  filtered=sortPages(filtered);
   header.style.display='flex';
-  count.textContent=(query?filtered.length+' / ':'')+allPages.length+' page'+(allPages.length===1?'':'s');
+  renderBreadcrumbs();
 
-  if(query&&!filtered.length){
-    el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--muted);font-size:.85rem">No pages match \\u201c'+esc(query)+'\\u201d</div>';return;
+  if (currentViewMode === 'folder' && !query) {
+    const subfolders = getSubfolders(allPages, currentFolder);
+    const directPages = allPages.filter(p => getParentFolder(p.slug) === currentFolder);
+    const sortedFolders = subfolders.sort((a,b) => a.name.localeCompare(b.name));
+    const sortedPages = sortPages(directPages);
+    
+    count.textContent = (currentFolder ? esc(currentFolder) + ' | ' : '') + allPages.length + ' page' + (allPages.length === 1 ? '' : 's');
+    
+    let html = '';
+    
+    if (sortedFolders.length > 0) {
+      html += '<div style="margin-bottom:1.5rem">' +
+        '<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;color:var(--muted);letter-spacing:.05em;margin-bottom:.75rem">Folders</div>' +
+        '<div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">';
+      html += sortedFolders.map(f => {
+        const fullPath = currentFolder ? currentFolder + '/' + f.name : f.name;
+        return '<div class="folder-card" onclick="navigateToFolder(\'' + fullPath.replace(/'/g, "\\'") + '\')">' +
+          '<div class="folder-icon">' +
+            '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h5l2 3h7a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>' +
+          '</div>' +
+          '<div class="folder-info">' +
+            '<div class="folder-name">' + esc(f.name) + '</div>' +
+            '<div class="folder-count">' + f.count + ' page' + (f.count===1?'':'s') + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('');
+      html += '</div></div>';
+    }
+    
+    if (sortedPages.length > 0) {
+      if (sortedFolders.length > 0) {
+        html += '<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;color:var(--muted);letter-spacing:.05em;margin-top:1.5rem;margin-bottom:.75rem">Pages</div>';
+      }
+      html += '<div class="card-grid">';
+      html += sortedPages.map(p => renderPageCardHtml(p)).join('');
+      html += '</div>';
+    }
+    
+    if (sortedFolders.length === 0 && sortedPages.length === 0) {
+      html = '<div style="text-align:center;padding:4rem 2rem;color:var(--muted);font-size:.85rem">' +
+        '<div style="font-size:2rem;margin-bottom:.5rem">&#128193;</div>' +
+        'This folder is empty.' +
+      '</div>';
+    }
+    el.innerHTML = html;
+  } else {
+    // Flat view or searching
+    let filtered = allPages;
+    if (currentFolder && currentViewMode === 'folder') {
+      filtered = allPages.filter(p => p.slug === currentFolder || p.slug.startsWith(currentFolder + "/"));
+    }
+    if (query) {
+      filtered = filtered.filter(p => p.title.toLowerCase().includes(query) || p.slug.includes(query) || (p.description||'').toLowerCase().includes(query));
+    }
+    filtered = sortPages(filtered);
+    count.textContent = (query ? filtered.length + ' / ' : '') + allPages.length + ' page' + (allPages.length === 1 ? '' : 's');
+    
+    if (query && !filtered.length) {
+      el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:.85rem">No pages match \\u201c' + esc(query) + '\\u201d</div>';
+      return;
+    }
+    el.innerHTML = '<div class="card-grid">' + filtered.map(p => renderPageCardHtml(p)).join('') + '</div>';
   }
 
-  el.innerHTML='<div class="card-grid">'+filtered.map(p=>{
-    const ago=timeAgo(new Date(p.updated)),desc=p.description||'A page shipped with Shipfast';
-    const mine=canManage(p);
-    return \`<a class="card" href="/p/\${p.slug}" target="_blank">
-      <div class="card-body">
-        <div class="card-thumb"><iframe src="/p/\${p.slug}" loading="lazy" tabindex="-1"></iframe></div>
-        <div class="card-title-wrap">
-          <div class="card-title">\${esc(p.title)}</div>
-          <div class="card-slug-inline">/p/\${p.slug}\${p.access==='publisher'?'<span class="lock-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Publisher</span>':''}</div>
-        </div>
-        <div class="card-desc">\${esc(desc)}</div>
-        <div class="card-footer">
-          <div class="card-time">\${clockSvg} \${ago} \${p.ownerName?'<span style="margin-left:.3rem;color:var(--muted2)">by '+esc(p.ownerName)+'</span>':''}</div>
-          <div class="card-actions">
-            \${mine?'<button class="btn-edit" onclick="editPage(event,\\''+p.slug+'\\')">'+editSvg+' Edit</button>':''}
-            <button class="btn-copy" onclick="copyPageUrl(event,'\${p.slug}')">\${copySvg} Copy URL</button>
-            \${mine?'<button class="btn btn-danger" onclick="deletePage(event,\\''+p.slug+'\\')">Delete</button>':''}
-          </div>
-        </div>
-      </div></a>\`;
-  }).join('')+'</div>';
-}
 
 async function loadPages(){
   allPages=await fetch('/api/pages').then(r=>r.json());
