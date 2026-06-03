@@ -1,5 +1,8 @@
 const express = require("express");
-require("dotenv").config();
+const path = require("path");
+// Load .env.local first (local dev overrides), then fall back to .env
+require("dotenv").config({ path: path.resolve(__dirname, ".env.local"), override: true });
+require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const { createClient } = require("redis");

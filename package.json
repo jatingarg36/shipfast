@@ -4,6 +4,10 @@
   "description": "Publish HTML pages built by Claude",
   "scripts": {
     "dev": "node server.js",
+    "dev:local": "node server.js",
+    "services:up": "docker compose up -d",
+    "services:down": "docker compose down",
+    "setup:local": "bash scripts/setup-local.sh",
     "build": "echo 'No build step needed'",
     "start": "node server.js"
   },

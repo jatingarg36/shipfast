@@ -1,0 +1,604 @@
+import { useState, useEffect, useCallback } from "react";
+
+// ── colour tokens ──────────────────────────────────────────────────────────
+const C = {
+  bg:       "#0e0f14",
+  surface:  "#161820",
+  card:     "#1c1e28",
+  border:   "#2a2d3a",
+  borderHi: "#3d4158",
+  text:     "#e8e9f0",
+  muted:    "#6b6f85",
+  accent:   "#e25c5c",
+  accentDim:"#3d1f1f",
+  teal:     "#2ec4a0",
+  tealDim:  "#0e3329",
+  amber:    "#f0a84a",
+  amberDim: "#3a2608",
+  blue:     "#5b9cf6",
+  blueDim:  "#132040",
+  purple:   "#a07cf6",
+  purpleDim:"#1e1440",
+};
+
+// ── data ───────────────────────────────────────────────────────────────────
+const DSA_TOPICS = [
+  { id:"graphs",   label:"Graphs (BFS/DFS)",        priority:"high",  problems:["Course DB Validation","Facebook Friends","Word Ladder","Shared Manager"] },
+  { id:"heaps",    label:"Hash Maps + Heaps",         priority:"high",  problems:["Zeitgeist / Top-K","Merged Sorted Iterators","Most Popular Items"] },
+  { id:"twoptr",   label:"Two Pointers / Sliding Win",priority:"high",  problems:["Pair Sum","Product Credits","No Character Pairs"] },
+  { id:"trees",    label:"Trees (DFS / BFS / LCA)",   priority:"high",  problems:["Who Is Our Boss?","Nodes in Level","Find Binary Row"] },
+  { id:"dp",       label:"Dynamic Programming",        priority:"med",   problems:["Word Break","Coin Change","Number Tuples","Falling Water"] },
+  { id:"trie",     label:"Trie",                       priority:"med",   problems:["Search Suggestion Service","Autocomplete"] },
+  { id:"stack",    label:"Stack + OOP Design",         priority:"med",   problems:["Calculator Notation (RPN)","Stack Implementation"] },
+  { id:"ll",       label:"Linked List",                priority:"low",   problems:["Clone LL w/ Random Ptr","Merging Iterators"] },
+  { id:"bsearch",  label:"Binary Search",              priority:"low",   problems:["Find Binary Row with 1s","Sorted Matrix Search"] },
+];
+
+const LM_TOPICS = [
+  { id:"calc",       label:"Calculator Notation (RPN)",   status:"todo" },
+  { id:"pizza",      label:"Pizza Price Calculator",       status:"todo" },
+  { id:"battleship", label:"Battleship (OOP)",              status:"todo" },
+  { id:"stack_lm",   label:"Stack + Thread Safety",         status:"todo" },
+  { id:"currency",   label:"Currency Denominations",        status:"todo" },
+  { id:"search_lm",  label:"Online Product Search",         status:"todo" },
+  { id:"poker",      label:"Poker Hand Evaluator",           status:"todo" },
+  { id:"find_cmd",   label:"Implement `find` Command",       status:"todo" },
+];
+
+const DESIGN_TOPICS = [
+  { id:"payment",    label:"Payment / Merchant Onboarding" },
+  { id:"streaming",  label:"Online Video Streaming + Leaderboard" },
+  { id:"url",        label:"URL Shortener" },
+  { id:"sensor",     label:"Weather Sensor System" },
+  { id:"chat",       label:"Real-time Chat / Messaging" },
+  { id:"training",   label:"Online Training Videos" },
+];
+
+const LP_LIST = [
+  "Customer Obsession",
+  "Ownership",
+  "Invent and Simplify",
+  "Are Right, A Lot",
+  "Deliver Results",
+  "Bias for Action",
+  "Hire & Develop the Best",
+  "Dive Deep",
+  "Learn & Be Curious",
+  "Insist on High Standards",
+  "Think Big",
+  "Earn Trust",
+  "Disagree & Commit",
+  "Have Backbone",
+  "Frugality",
+  "Strive to be Earth's Best Employer",
+];
+
+const WEEKS = [
+  { week:1, title:"DSA Foundation Reset",         tasks:["Graphs: BFS/DFS, cycle detection","Trees: LCA, level-order","Trie implementation + top-K","Revise hash maps, heap, sorting","2 Amazon problems/day"] },
+  { week:2, title:"DSA Patterns + Amazon Bank",   tasks:["Two pointers, sliding window","DP: coin change, word break, knapsack","Merge K sorted lists (heap)","Solve: Falling Water, Pair Sum, Zeitgeist","Timed practice: 45 min per problem"] },
+  { week:3, title:"Logical & Maintainable",        tasks:["RPN Calculator with extensions","Pizza pricing + side dish extension","Battleship / Poker hand OOP","SOLID principles review","Write extensible code, no giant if/else"] },
+  { week:4, title:"System Design",                 tasks:["Payment system design (your strength)","Video streaming / leaderboard","URL shortener + sensor system","Scale estimation + trade-offs","Add ops: monitoring, alarms, failure modes"] },
+  { week:5, title:"LP Stories + Mocks",            tasks:["Write all 16 LP STAR answers","Practice out loud (record yourself)","Mock: full 45-min coding round","Mock: 45-min design round","Refine: tighter, more quantified"] },
+  { week:6, title:"Full Simulation + Polish",      tasks:["2 full mock loops (tech + LP)","Re-solve weak-area problems","Review all complexity analyses","Prepare questions for interviewers","Rest + confidence building"] },
+];
+
+// ── helpers ────────────────────────────────────────────────────────────────
+const pct = (done, total) => total === 0 ? 0 : Math.round((done / total) * 100);
+
+const PRIORITY_COLOR = { high: C.accent, med: C.amber, low: C.teal };
+const STATUS_COLOR   = { todo: C.muted, doing: C.amber, done: C.teal };
+const STATUS_LABEL   = { todo: "To Do", doing: "In Progress", done: "Done" };
+
+function Ring({ value, size = 56, stroke = 5, color = C.teal }) {
+  const r = (size - stroke) / 2;
+  const circ = 2 * Math.PI * r;
+  const dash = (value / 100) * circ;
+  return (
+    <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={C.border} strokeWidth={stroke} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color}
+        strokeWidth={stroke} strokeDasharray={`${dash} ${circ}`}
+        strokeLinecap="round" style={{ transition:"stroke-dasharray .4s ease" }} />
+    </svg>
+  );
+}
+
+function Pill({ label, color }) {
+  return (
+    <span style={{ fontSize:12, fontWeight:600, padding:"2px 7px", borderRadius:20,
+      background: color + "22", color, border:`1px solid ${color}44`, letterSpacing:".04em" }}>
+      {label}
+    </span>
+  );
+}
+
+function MiniBar({ value, color = C.teal }) {
+  return (
+    <div style={{ height:4, borderRadius:4, background: C.border, overflow:"hidden", flex:1 }}>
+      <div style={{ height:"100%", width:`${value}%`, background: color,
+        borderRadius:4, transition:"width .4s ease" }} />
+    </div>
+  );
+}
+
+// ── storage helpers ────────────────────────────────────────────────────────
+async function load(key) {
+  try { const r = await window.storage.get(key); return r ? JSON.parse(r.value) : null; }
+  catch { return null; }
+}
+async function save(key, val) {
+  try { await window.storage.set(key, JSON.stringify(val)); } catch {}
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+export default function TrackIt() {
+  // ── state ───────────────────────────────────────────────────────────────
+  const [tab, setTab]               = useState("overview");
+  const [dsaState, setDsaState]     = useState({});   // {topicId: {status, problems: {name: bool}}}
+  const [lmState, setLmState]       = useState({});   // {topicId: status}
+  const [designState, setDesignState] = useState({}); // {topicId: status}
+  const [lpState, setLpState]       = useState({});   // {lp: {written, practiced}}
+  const [weekState, setWeekState]   = useState({});   // {`${week}-${i}`: bool}
+  const [mockCount, setMockCount]   = useState(0);
+  const [loading, setLoading]       = useState(true);
+  const [saved, setSaved]           = useState(false);
+
+  // ── load on mount ────────────────────────────────────────────────────────
+  useEffect(() => {
+    (async () => {
+      const [dsa, lm, design, lp, wk, mocks] = await Promise.all([
+        load("trackit_dsa"), load("trackit_lm"), load("trackit_design"),
+        load("trackit_lp"), load("trackit_weeks"), load("trackit_mocks"),
+      ]);
+      if (dsa)    setDsaState(dsa);
+      if (lm)     setLmState(lm);
+      if (design) setDesignState(design);
+      if (lp)     setLpState(lp);
+      if (wk)     setWeekState(wk);
+      if (mocks !== null) setMockCount(mocks);
+      setLoading(false);
+    })();
+  }, []);
+
+  // ── persist ──────────────────────────────────────────────────────────────
+  const persist = useCallback(async (dsaS, lmS, dsS, lpS, wkS, mc) => {
+    await Promise.all([
+      save("trackit_dsa", dsaS), save("trackit_lm", lmS),
+      save("trackit_design", dsS), save("trackit_lp", lpS),
+      save("trackit_weeks", wkS), save("trackit_mocks", mc),
+    ]);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 1600);
+  }, []);
+
+  // ── dsa handlers ─────────────────────────────────────────────────────────
+  const cycleDsaStatus = (id) => {
+    const cur = dsaState[id]?.status || "todo";
+    const nxt = cur === "todo" ? "doing" : cur === "doing" ? "done" : "todo";
+    const ns = { ...dsaState, [id]: { ...dsaState[id], status: nxt } };
+    setDsaState(ns);
+    persist(ns, lmState, designState, lpState, weekState, mockCount);
+  };
+  const toggleProblem = (topicId, prob) => {
+    const cur = dsaState[topicId]?.problems || {};
+    const ns = { ...dsaState, [topicId]: { ...dsaState[topicId], problems: { ...cur, [prob]: !cur[prob] } } };
+    setDsaState(ns);
+    persist(ns, lmState, designState, lpState, weekState, mockCount);
+  };
+
+  // ── lm handlers ──────────────────────────────────────────────────────────
+  const cycleLm = (id) => {
+    const cur = lmState[id] || "todo";
+    const nxt = cur === "todo" ? "doing" : cur === "doing" ? "done" : "todo";
+    const ns = { ...lmState, [id]: nxt };
+    setLmState(ns);
+    persist(dsaState, ns, designState, lpState, weekState, mockCount);
+  };
+
+  // ── design handlers ───────────────────────────────────────────────────────
+  const cycleDesign = (id) => {
+    const cur = designState[id] || "todo";
+    const nxt = cur === "todo" ? "doing" : cur === "doing" ? "done" : "todo";
+    const ns = { ...designState, [id]: nxt };
+    setDesignState(ns);
+    persist(dsaState, lmState, ns, lpState, weekState, mockCount);
+  };
+
+  // ── lp handlers ──────────────────────────────────────────────────────────
+  const toggleLp = (lp, field) => {
+    const cur = lpState[lp] || {};
+    const ns = { ...lpState, [lp]: { ...cur, [field]: !cur[field] } };
+    setLpState(ns);
+    persist(dsaState, lmState, designState, ns, weekState, mockCount);
+  };
+
+  // ── week handlers ─────────────────────────────────────────────────────────
+  const toggleWeek = (week, i) => {
+    const k = `${week}-${i}`;
+    const ns = { ...weekState, [k]: !weekState[k] };
+    setWeekState(ns);
+    persist(dsaState, lmState, designState, lpState, ns, mockCount);
+  };
+
+  const changeMocks = (delta) => {
+    const nm = Math.max(0, mockCount + delta);
+    setMockCount(nm);
+    persist(dsaState, lmState, designState, lpState, weekState, nm);
+  };
+
+  // ── derived stats ─────────────────────────────────────────────────────────
+  const dsaDone   = DSA_TOPICS.filter(t => dsaState[t.id]?.status === "done").length;
+  const lmDone    = LM_TOPICS.filter(t => (lmState[t.id] || "todo") === "done").length;
+  const desDone   = DESIGN_TOPICS.filter(t => (designState[t.id] || "todo") === "done").length;
+  const lpWritten = LP_LIST.filter(lp => lpState[lp]?.written).length;
+  const lpPrac    = LP_LIST.filter(lp => lpState[lp]?.practiced).length;
+  const weekDone  = WEEKS.reduce((acc, w) => acc + w.tasks.filter((_, i) => weekState[`${w.week}-${i}`]).length, 0);
+  const weekTotal = WEEKS.reduce((acc, w) => acc + w.tasks.length, 0);
+
+  const overallPct = Math.round((
+    pct(dsaDone,   DSA_TOPICS.length)    * 0.25 +
+    pct(lmDone,    LM_TOPICS.length)     * 0.20 +
+    pct(desDone,   DESIGN_TOPICS.length) * 0.20 +
+    pct(lpWritten, LP_LIST.length)       * 0.20 +
+    Math.min(mockCount * 10, 100)        * 0.15
+  ));
+
+  // ── styles ─────────────────────────────────────────────────────────────────
+  const s = {
+    root: { background: C.bg, minHeight:"100vh", color: C.text,
+      fontFamily:"'DM Mono', 'Courier New', monospace", fontSize:16, zoom:1.2 },
+    header: { padding:"20px 24px 0", borderBottom:`1px solid ${C.border}` },
+    brand: { display:"flex", alignItems:"center", gap:10, marginBottom:16 },
+    logo: { width:28, height:28, borderRadius:6, background: C.accent,
+      display:"flex", alignItems:"center", justifyContent:"center",
+      fontWeight:700, fontSize:13, color:"#fff", letterSpacing:".04em" },
+    brandName: { fontWeight:700, fontSize:18, letterSpacing:".06em", color: C.text },
+    subtitle: { fontSize:13, color: C.muted, marginTop:1 },
+    tabs: { display:"flex", gap:2, marginTop:4 },
+    tab: (active) => ({
+      padding:"8px 14px", fontSize:13, fontWeight:600, letterSpacing:".06em",
+      border:"none", cursor:"pointer", borderRadius:"6px 6px 0 0",
+      transition:"all .15s",
+      background: active ? C.surface : "transparent",
+      color: active ? C.text : C.muted,
+      borderBottom: active ? `2px solid ${C.accent}` : "2px solid transparent",
+    }),
+    body: { padding:"20px 24px" },
+    grid2: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 },
+    grid3: { display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 },
+    card: { background: C.card, border:`1px solid ${C.border}`, borderRadius:10, padding:"14px 16px" },
+    cardTitle: { fontSize:18, fontWeight:600, letterSpacing:".08em", color: C.muted, textTransform:"uppercase", marginBottom:12 },
+    statNum: { fontSize:28, fontWeight:700, color: C.text, lineHeight:1 },
+    statLabel: { fontSize:13, color: C.muted, marginTop:4 },
+    row: { display:"flex", alignItems:"center", gap:10, padding:"8px 0",
+      borderBottom:`1px solid ${C.border}` },
+    chip: (color) => ({ fontSize:16, fontWeight:700, padding:"2px 6px",
+      borderRadius:4, background: color+"33", color, border:`1px solid ${color}55`,
+      cursor:"pointer", userSelect:"none", whiteSpace:"nowrap",
+      transition:"all .15s" }),
+    check: (done) => ({ width:16, height:16, borderRadius:4, border:`1px solid ${done ? C.teal : C.border}`,
+      background: done ? C.teal : "transparent", cursor:"pointer",
+      display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0,
+      transition:"all .15s" }),
+    saveToast: { position:"fixed", bottom:20, right:20, background: C.teal,
+      color:"#0a2820", fontWeight:700, fontSize:11, padding:"6px 14px",
+      borderRadius:20, letterSpacing:".06em",
+      opacity: saved ? 1 : 0, transition:"opacity .3s", pointerEvents:"none" },
+  };
+
+  const TABS = [
+    { id:"overview", label:"OVERVIEW" },
+    { id:"dsa",      label:"DSA" },
+    { id:"lm",       label:"L&M CODE" },
+    { id:"design",   label:"DESIGN" },
+    { id:"lp",       label:"LP STORIES" },
+    { id:"plan",     label:"STUDY PLAN" },
+  ];
+
+  if (loading) return (
+    <div style={{ ...s.root, display:"flex", alignItems:"center", justifyContent:"center", height:"100vh" }}>
+      <div style={{ color: C.muted, fontSize:12, letterSpacing:".1em" }}>LOADING YOUR PROGRESS…</div>
+    </div>
+  );
+
+  return (
+    <div style={s.root}>
+      {/* ── header ── */}
+      <div style={s.header}>
+        <div style={s.brand}>
+          <div style={s.logo}>TI</div>
+          <div>
+            <div style={s.brandName}>TRACK-IT</div>
+            <div style={s.subtitle}>Amazon SDE 2 Prep · Jatin Garg</div>
+          </div>
+          <div style={{ marginLeft:"auto", textAlign:"right" }}>
+            <div style={{ fontSize:11, color: C.muted }}>Overall Progress</div>
+            <div style={{ fontSize:22, fontWeight:700, color: C.accent }}>{overallPct}%</div>
+          </div>
+        </div>
+        <div style={s.tabs}>
+          {TABS.map(t => (
+            <button key={t.id} style={s.tab(tab === t.id)} onClick={() => setTab(t.id)}>{t.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={s.body}>
+
+        {/* ══════════ OVERVIEW ══════════ */}
+        {tab === "overview" && (
+          <div>
+            {/* big ring + stats */}
+            <div style={{ ...s.grid2, marginBottom:16, alignItems:"start" }}>
+              <div style={{ ...s.card, display:"flex", alignItems:"center", gap:20 }}>
+                <div style={{ position:"relative", flexShrink:0 }}>
+                  <Ring value={overallPct} size={88} stroke={7} color={C.accent} />
+                  <div style={{ position:"absolute", inset:0, display:"flex", alignItems:"center",
+                    justifyContent:"center", flexDirection:"column" }}>
+                    <span style={{ fontSize:18, fontWeight:700, color: C.accent }}>{overallPct}</span>
+                    <span style={{ fontSize:9, color: C.muted }}>%</span>
+                  </div>
+                </div>
+                <div>
+                  <div style={{ fontWeight:700, fontSize:14, marginBottom:6 }}>Overall Readiness</div>
+                  <div style={{ fontSize:11, color: C.muted, lineHeight:1.9 }}>
+                    DSA: {pct(dsaDone, DSA_TOPICS.length)}% · L&M: {pct(lmDone, LM_TOPICS.length)}%<br/>
+                    Design: {pct(desDone, DESIGN_TOPICS.length)}% · LP: {pct(lpWritten, LP_LIST.length)}%<br/>
+                    Mocks: {mockCount} done
+                  </div>
+                </div>
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                {[
+                  { label:"DSA Topics",     done: dsaDone,    total: DSA_TOPICS.length,    color: C.accent },
+                  { label:"L&M Questions",  done: lmDone,     total: LM_TOPICS.length,     color: C.amber  },
+                  { label:"System Designs", done: desDone,    total: DESIGN_TOPICS.length, color: C.blue   },
+                  { label:"LP Written",     done: lpWritten,  total: LP_LIST.length,        color: C.purple },
+                  { label:"LP Practiced",   done: lpPrac,     total: LP_LIST.length,        color: C.teal   },
+                ].map(({ label, done, total, color }) => (
+                  <div key={label} style={{ ...s.card, padding:"10px 14px" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+                      <span style={{ fontSize:11, color: C.muted }}>{label}</span>
+                      <span style={{ fontSize:11, fontWeight:700, color }}>{done}/{total}</span>
+                    </div>
+                    <MiniBar value={pct(done, total)} color={color} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* mock counter */}
+            <div style={{ ...s.card, display:"flex", alignItems:"center", gap:16 }}>
+              <div>
+                <div style={s.cardTitle}>Mock Interviews Done</div>
+                <div style={{ fontSize:32, fontWeight:700, color: C.teal }}>{mockCount}</div>
+                <div style={{ fontSize:11, color: C.muted }}>Target: 6+</div>
+              </div>
+              <div style={{ marginLeft:"auto", display:"flex", gap:8 }}>
+                <button onClick={() => changeMocks(-1)}
+                  style={{ padding:"8px 16px", background: C.surface, border:`1px solid ${C.border}`,
+                    color: C.text, borderRadius:6, cursor:"pointer", fontSize:18, fontWeight:700 }}>−</button>
+                <button onClick={() => changeMocks(1)}
+                  style={{ padding:"8px 16px", background: C.teal, border:"none",
+                    color:"#0a2820", borderRadius:6, cursor:"pointer", fontSize:18, fontWeight:700 }}>+</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ DSA ══════════ */}
+        {tab === "dsa" && (
+          <div>
+            <div style={{ marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ color: C.muted, fontSize:11 }}>Click status chip to cycle · check off individual problems</div>
+              <Pill label={`${dsaDone} / ${DSA_TOPICS.length} topics done`} color={C.accent} />
+            </div>
+            {DSA_TOPICS.map(topic => {
+              const ts = dsaState[topic.id] || {};
+              const status = ts.status || "todo";
+              const probs = ts.problems || {};
+              const probsDone = topic.problems.filter(p => probs[p]).length;
+              return (
+                <div key={topic.id} style={{ ...s.card, marginBottom:10 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontWeight:600, fontSize:13 }}>{topic.label}</div>
+                      <div style={{ fontSize:10, color: C.muted, marginTop:3 }}>
+                        {probsDone}/{topic.problems.length} problems solved
+                      </div>
+                    </div>
+                    <Pill label={topic.priority.toUpperCase()} color={PRIORITY_COLOR[topic.priority]} />
+                    <button style={s.chip(STATUS_COLOR[status])} onClick={() => cycleDsaStatus(topic.id)}>
+                      {STATUS_LABEL[status]}
+                    </button>
+                  </div>
+                  <div style={{ marginTop:10, display:"flex", flexWrap:"wrap", gap:6 }}>
+                    {topic.problems.map(prob => (
+                      <div key={prob} onClick={() => toggleProblem(topic.id, prob)}
+                        style={{ display:"flex", alignItems:"center", gap:6, cursor:"pointer",
+                          background: probs[prob] ? C.tealDim : C.surface,
+                          border:`1px solid ${probs[prob] ? C.teal+"55" : C.border}`,
+                          borderRadius:6, padding:"5px 10px", fontSize:11,
+                          color: probs[prob] ? C.teal : C.muted, transition:"all .15s" }}>
+                        <div style={{ ...s.check(probs[prob]), width:12, height:12, borderRadius:3 }}>
+                          {probs[prob] && <span style={{ fontSize:9, color:"#0a2820", fontWeight:700 }}>✓</span>}
+                        </div>
+                        {prob}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ══════════ L&M ══════════ */}
+        {tab === "lm" && (
+          <div>
+            <div style={{ marginBottom:16, display:"flex", justifyContent:"space-between" }}>
+              <div style={{ fontSize:11, color: C.muted }}>Logical & Maintainable Code round — OOP + extensibility focus</div>
+              <Pill label={`${lmDone} / ${LM_TOPICS.length} done`} color={C.amber} />
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {LM_TOPICS.map(t => {
+                const status = lmState[t.id] || "todo";
+                return (
+                  <div key={t.id} style={{ ...s.card,
+                    borderLeft:`3px solid ${STATUS_COLOR[status]}`,
+                    display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                    <span style={{ fontSize:13, fontWeight:500 }}>{t.label}</span>
+                    <button style={s.chip(STATUS_COLOR[status])} onClick={() => cycleLm(t.id)}>
+                      {STATUS_LABEL[status]}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <div style={{ ...s.card, marginTop:14, background: C.amberDim, border:`1px solid ${C.amber}33` }}>
+              <div style={{ fontSize:11, fontWeight:600, color: C.amber, marginBottom:6 }}>Key SDE 2 Bar</div>
+              <div style={{ fontSize:12, color: C.muted, lineHeight:1.8 }}>
+                ✓ Solution + 1 extension with minimal re-architecture<br/>
+                ✓ Clear separation of concerns — avoid big if/else chains<br/>
+                ✓ Uses interface / abstract class for extensibility<br/>
+                ✓ Considers unit testing (strong hire: proactively mentions it)<br/>
+                ✓ Strong hire: generic solution + thread safety unprompted
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ DESIGN ══════════ */}
+        {tab === "design" && (
+          <div>
+            <div style={{ marginBottom:16, display:"flex", justifyContent:"space-between" }}>
+              <div style={{ fontSize:11, color: C.muted }}>45-min design round — framework + trade-offs + ops</div>
+              <Pill label={`${desDone} / ${DESIGN_TOPICS.length} done`} color={C.blue} />
+            </div>
+            {DESIGN_TOPICS.map(t => {
+              const status = designState[t.id] || "todo";
+              return (
+                <div key={t.id} style={{ ...s.card, marginBottom:8,
+                  borderLeft:`3px solid ${STATUS_COLOR[status]}`,
+                  display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:13, fontWeight:500 }}>{t.label}</span>
+                  <button style={s.chip(STATUS_COLOR[status])} onClick={() => cycleDesign(t.id)}>
+                    {STATUS_LABEL[status]}
+                  </button>
+                </div>
+              );
+            })}
+            <div style={{ ...s.card, marginTop:14 }}>
+              <div style={s.cardTitle}>45-min Design Framework</div>
+              {[
+                ["0–5 min", "Clarify: ask 3+ questions, define scale + users", C.accent],
+                ["5–10 min","High-level: API, data model, components, data flow", C.amber],
+                ["10–25 min","Deep dive: storage choice, critical path", C.blue],
+                ["25–35 min","Scale: bottlenecks, caching, sharding, queues", C.purple],
+                ["35–45 min","Ops: failure modes, monitoring, alarms (bar-raising)", C.teal],
+              ].map(([time, desc, color]) => (
+                <div key={time} style={{ display:"flex", gap:12, padding:"7px 0",
+                  borderBottom:`1px solid ${C.border}`, alignItems:"flex-start" }}>
+                  <span style={{ fontSize:12, fontWeight:700, color, minWidth:64, flexShrink:0, paddingTop:1 }}>{time}</span>
+                  <span style={{ fontSize:12, color: C.muted }}>{desc}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ══════════ LP ══════════ */}
+        {tab === "lp" && (
+          <div>
+            <div style={{ marginBottom:16, display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
+              <div style={{ fontSize:11, color: C.muted }}>Track writing + practicing each LP story</div>
+              <div style={{ display:"flex", gap:8 }}>
+                <Pill label={`${lpWritten} written`} color={C.purple} />
+                <Pill label={`${lpPrac} practiced`} color={C.teal} />
+              </div>
+            </div>
+            <div style={{ ...s.card, marginBottom:12, background: C.purpleDim, border:`1px solid ${C.purple}33` }}>
+              <div style={{ fontSize:11, color: C.purple, fontWeight:600, marginBottom:4 }}>STAR Reminder</div>
+              <div style={{ fontSize:11, color: C.muted, lineHeight:1.8 }}>
+                <b style={{ color: C.accent }}>S</b>ituation (1–2 sentences) · <b style={{ color: C.amber }}>T</b>ask (your specific role) · <b style={{ color: C.teal }}>A</b>ction ("I" not "we", specific) · <b style={{ color: C.blue }}>R</b>esult (quantified)
+              </div>
+            </div>
+            {LP_LIST.map(lp => {
+              const s2 = lpState[lp] || {};
+              return (
+                <div key={lp} style={{ ...s.card, marginBottom:7,
+                  display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+                  <span style={{ fontSize:13, fontWeight:500, flex:1 }}>{lp}</span>
+                  <div style={{ display:"flex", gap:8 }}>
+                    <div onClick={() => toggleLp(lp, "written")}
+                      style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer",
+                        padding:"4px 10px", borderRadius:6,
+                        background: s2.written ? C.purpleDim : C.surface,
+                        border:`1px solid ${s2.written ? C.purple+"55" : C.border}`,
+                        color: s2.written ? C.purple : C.muted, fontSize:11 }}>
+                      <span>{s2.written ? "✓" : "○"}</span> Written
+                    </div>
+                    <div onClick={() => toggleLp(lp, "practiced")}
+                      style={{ display:"flex", alignItems:"center", gap:5, cursor:"pointer",
+                        padding:"4px 10px", borderRadius:6,
+                        background: s2.practiced ? C.tealDim : C.surface,
+                        border:`1px solid ${s2.practiced ? C.teal+"55" : C.border}`,
+                        color: s2.practiced ? C.teal : C.muted, fontSize:11 }}>
+                      <span>{s2.practiced ? "✓" : "○"}</span> Practiced
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* ══════════ PLAN ══════════ */}
+        {tab === "plan" && (
+          <div>
+            <div style={{ marginBottom:16, display:"flex", justifyContent:"space-between" }}>
+              <div style={{ fontSize:11, color: C.muted }}>6-week schedule · check off tasks as you complete them</div>
+              <Pill label={`${weekDone} / ${weekTotal} tasks done`} color={C.teal} />
+            </div>
+            {WEEKS.map(({ week, title, tasks }) => {
+              const done = tasks.filter((_, i) => weekState[`${week}-${i}`]).length;
+              return (
+                <div key={week} style={{ ...s.card, marginBottom:10 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:10 }}>
+                    <div style={{ width:28, height:28, borderRadius:6, background: C.accent,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontSize:11, fontWeight:700, color:"#fff", flexShrink:0 }}>W{week}</div>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontWeight:600, fontSize:13 }}>{title}</div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8, marginTop:4 }}>
+                        <MiniBar value={pct(done, tasks.length)} color={C.teal} />
+                        <span style={{ fontSize:12, color: C.muted, flexShrink:0 }}>{done}/{tasks.length}</span>
+                      </div>
+                    </div>
+                  </div>
+                  {tasks.map((task, i) => {
+                    const checked = !!weekState[`${week}-${i}`];
+                    return (
+                      <div key={i} onClick={() => toggleWeek(week, i)}
+                        style={{ display:"flex", alignItems:"center", gap:10, padding:"6px 0",
+                          borderTop:`1px solid ${C.border}`, cursor:"pointer" }}>
+                        <div style={{ ...s.check(checked) }}>
+                          {checked && <span style={{ fontSize:9, color:"#0a2820", fontWeight:700 }}>✓</span>}
+                        </div>
+                        <span style={{ fontSize:12, color: checked ? C.muted : C.text,
+                          textDecoration: checked ? "line-through" : "none" }}>{task}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* save toast */}
+      <div style={s.saveToast}>✓ SAVED</div>
+    </div>
+  );
+}
