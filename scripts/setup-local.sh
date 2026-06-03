@@ -78,3 +78,4 @@ echo "  MinIO  → http://127.0.0.1:9000  (S3 API)"
 echo "  MinIO  → http://127.0.0.1:9001  (Web console — login: minioadmin / minioadmin)"
 echo ""
 info "Your .env.local is already configured for these. Run: npm run dev"
+w
