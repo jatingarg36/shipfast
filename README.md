@@ -7,7 +7,9 @@ A dead-simple web app to publish HTML pages built by Claude — paste, slug, don
 - **Publish any HTML** — paste Claude's output and give it a URL slug
 - **Instant public links** — every page is live at `/p/your-slug`
 - **Delete pages** — clean up old pages anytime
-- **Zero database** — pages stored as plain `.html` files
+- **Authentication** — password + Google OAuth login
+- **Access control** — public/publisher pages with permission management
+- **S3 backed** — optional persistent storage via AWS S3
 
 ---
 
@@ -78,10 +80,45 @@ S3_REGION=us-east-1
 
 ```
 ShipFast/
-├── server.js        # Express server + dashboard UI
-├── vercel.json      # Vercel routing config
+├── server.js           # Express entry point (~60 lines)
+├── config.js           # Environment & config management
+├── vercel.json         # Vercel routing config
 ├── package.json
-└── pages/           # Published HTML files live here (auto-created)
+│
+├── services/           # Business logic (reusable, testable)
+│   ├── s3.js          # S3 operations abstraction
+│   ├── user.js        # User management
+│   ├── page.js        # Page metadata & listing
+│   └── content.js     # Content type detection
+│
+├── routes/             # API endpoints
+│   ├── auth.js        # Auth endpoints (/login, /api/login)
+│   ├── api.js         # Page API routes (/api/pages/*)
+│   └── pages.js       # Page serving (/p/:slug)
+│
+├── middleware/         # Express middleware
+│   └── auth.js        # Authentication & authorization
+│
+├── templates/          # HTML generation
+│   ├── auth.js        # Login page
+│   ├── pages.js       # 404 page
+│   └── dashboard.js   # Dashboard + CSS + JS
+│
+└── REFACTORING_SUMMARY.md  # Detailed architecture guide
 ```
 
-> **Note:** Vercel's serverless functions have an ephemeral filesystem — pages will reset on redeploy. For permanent storage, swap the `pages/` file store with a free [Vercel KV](https://vercel.com/docs/storage/vercel-kv) or [Supabase](https://supabase.com) database. See `server.js` comments for hook points.
+**Architecture highlights:**
+- **Modular design** — 12+ focused files (SOLID principles)
+- **Separation of concerns** — Services, routes, middleware, templates all isolated
+- **Testable** — Services are pure business logic, easy to unit test
+- **Extensible** — Add features by composing existing modules
+
+See [REFACTORING_SUMMARY.md](./REFACTORING_SUMMARY.md) for detailed architecture documentation.
+
+---
+
+## Storage
+
+- **Default**: Files stored in `pages/` directory
+- **S3 optional**: Set `S3_BUCKET` + AWS credentials for persistent cloud storage
+- **Vercel Note**: Serverless functions have ephemeral filesystems. Use S3 for production deployments.
