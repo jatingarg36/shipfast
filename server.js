@@ -1,5 +1,8 @@
 const express = require("express");
-require("dotenv").config();
+const path = require("path");
+// Load .env.local first (local dev overrides), then fall back to .env
+require("dotenv").config({ path: path.resolve(__dirname, ".env.local"), override: true });
+require("dotenv").config({ path: path.resolve(__dirname, ".env") });
 const session = require("express-session");
 const RedisStore = require("connect-redis").default;
 const { createClient } = require("redis");
@@ -70,11 +73,7 @@ async function s3GetText(key) {
 }
 
 async function s3PutText(key, text) {
-  try {
-    await s3Client.send(new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, Body: text, ContentType: 'text/plain; charset=utf-8' }));
-  } catch (e) {
-    console.error('s3PutText error', e);
-  }
+  await s3Client.send(new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, Body: text, ContentType: 'text/plain; charset=utf-8' }));
 }
 
 async function s3Delete(key) {
@@ -666,7 +665,10 @@ app.get("/p/:slug(*)", async (req, res) => {
       background:linear-gradient(135deg,#f97316,#ef4444);
       display:inline-grid;place-items:center;font-size:8px">&#9889;</span>
     Shipfast</a>`;
-  const finalHtml = html.replace("</body>", badge + "</body>");
+  const lastBodyIdx = html.lastIndexOf("</body>");
+  const finalHtml = lastBodyIdx === -1
+    ? html + badge
+    : html.slice(0, lastBodyIdx) + badge + html.slice(lastBodyIdx);
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(finalHtml);
 });
@@ -1583,7 +1585,7 @@ function renderBreadcrumbs() {
   bc.style.display = 'flex';
   bc.className = 'breadcrumbs';
   
-  let html = '<a onclick="navigateToFolder(\'\')">All Pages</a>';
+  let html = '<a onclick="navigateToFolder(&apos;&apos;)" style="cursor:pointer">All Pages</a>';
   if (currentFolder) {
     const parts = currentFolder.split('/');
     let path = '';
@@ -1593,7 +1595,7 @@ function renderBreadcrumbs() {
       if (index === parts.length - 1) {
         html += '<span class="curr">' + esc(part) + '</span>';
       } else {
-        html += '<a onclick="navigateToFolder(\'' + path.replace(/'/g, "\\'") + '\')">' + esc(part) + '</a>';
+        html += '<a onclick="navigateToFolder(&apos;' + path + '&apos;)" style="cursor:pointer">' + esc(part) + '</a>';
       }
     });
   }
@@ -1707,7 +1709,7 @@ function openModal(isEdit){
   const h=document.querySelector('#modalStep1 .modal-header h2');
   h.textContent=editingSlug?'Edit Page':'Publish a Page';
   publishBtn.textContent=editingSlug?'Update':'Publish';
-  setTimeout(()=>(editingSlug?htmlInput:htmlInput).focus(),100);
+  setTimeout(()=>(editingSlug?slugInput:htmlInput).focus(),100);
 }
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); editingSlug=null; }
 function resetModalFields(){
@@ -1778,7 +1780,7 @@ async function publish(){
   }catch(err){
     showToast('Network error','err');
   }
-  finally{publishBtn.classList.remove('loading');publishBtn.textContent='Publish'}
+  finally{publishBtn.classList.remove('loading');publishBtn.textContent=editingSlug?'Update':'Publish'}
 }
 function copyUrl(){
   navigator.clipboard.writeText(document.getElementById('successUrl').href).then(()=>{
@@ -1794,7 +1796,6 @@ function copyPageUrl(e,slug){
 }
 
 // ── Delete with undo ──
-let pendingDeleteSlug=null, undoTimer=null;
 function deletePage(e,slug){ e.stopPropagation();e.preventDefault(); pendingDeleteSlug=slug;
   document.getElementById('deleteSlugName').textContent='/p/'+slug;
   document.getElementById('deleteOverlay').classList.add('open');
@@ -1820,7 +1821,7 @@ async function confirmDelete(){
 async function undoDelete(){
   const b=window._undoBackup; if(!b) return;
   window._undoBackup=null; clearTimeout(undoTimer);
-  await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:b.slug,html:b.source})});
+  await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:b.slug,html:b.source,access:b.access})});
   loadPages(); showToast('Restored /p/'+b.slug,'ok');
 }
 
@@ -1836,6 +1837,10 @@ function sortPages(pages){
   return arr;
 }
 
+const clockSvg = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
+const editSvg  = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+const copySvg  = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+
 function renderPageCardHtml(p) {
   const ago = timeAgo(new Date(p.updated)), desc = p.description || 'A page shipped with Shipfast';
   const mine = canManage(p);
@@ -1850,9 +1855,9 @@ function renderPageCardHtml(p) {
       '<div class="card-footer">' +
         '<div class="card-time">' + clockSvg + ' ' + ago + (p.ownerName?'<span style="margin-left:.3rem;color:var(--muted2)">by ' + esc(p.ownerName) + '</span>':'') + '</div>' +
         '<div class="card-actions">' +
-          (mine?'<button class="btn-edit" onclick="editPage(event,\'' + p.slug + '\')">' + editSvg + ' Edit</button>':'') +
-          '<button class="btn-copy" onclick="copyPageUrl(event,\'' + p.slug + '\')">' + copySvg + ' Copy URL</button>' +
-          (mine?'<button class="btn btn-danger" onclick="deletePage(event,\'' + p.slug + '\')">Delete</button>':'') +
+          (mine?'<button class="btn-edit" onclick="editPage(event,&apos;' + p.slug + '&apos;)">' + editSvg + ' Edit</button>':'') +
+          '<button class="btn-copy" onclick="copyPageUrl(event,&apos;' + p.slug + '&apos;)">' + copySvg + ' Copy URL</button>' +
+          (mine?'<button class="btn btn-danger" onclick="deletePage(event,&apos;' + p.slug + '&apos;)">Delete</button>':'') +
         '</div>' +
       '</div>' +
     '</div></a>';
@@ -1898,7 +1903,7 @@ function renderPages(query){
         '<div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">';
       html += sortedFolders.map(f => {
         const fullPath = currentFolder ? currentFolder + '/' + f.name : f.name;
-        return '<div class="folder-card" onclick="navigateToFolder(\'' + fullPath.replace(/'/g, "\\'") + '\')">' +
+        return '<div class="folder-card" onclick="navigateToFolder(&apos;' + fullPath + '&apos;)">' +
           '<div class="folder-icon">' +
             '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h5l2 3h7a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>' +
           '</div>' +
@@ -1945,7 +1950,7 @@ function renderPages(query){
     }
     el.innerHTML = '<div class="card-grid">' + filtered.map(p => renderPageCardHtml(p)).join('') + '</div>';
   }
-
+}
 
 async function loadPages(){
   allPages=await fetch('/api/pages').then(r=>r.json());
