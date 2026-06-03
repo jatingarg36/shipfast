@@ -15,7 +15,7 @@ const config = {
   PORT: process.env.PORT || 3000,
 
   // Auth settings
-  PUBLISHER_PASSWORD: process.env.PUBLISHER_PASSWORD || "shipfast",
+  PUBLISHER_PASSWORD: process.env.PUBLISHER_PASSWORD,
   SESSION_SECRET: process.env.SESSION_SECRET,
 
   // Redis configuration
