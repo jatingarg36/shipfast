@@ -70,11 +70,7 @@ async function s3GetText(key) {
 }
 
 async function s3PutText(key, text) {
-  try {
-    await s3Client.send(new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, Body: text, ContentType: 'text/plain; charset=utf-8' }));
-  } catch (e) {
-    console.error('s3PutText error', e);
-  }
+  await s3Client.send(new PutObjectCommand({ Bucket: S3_BUCKET, Key: key, Body: text, ContentType: 'text/plain; charset=utf-8' }));
 }
 
 async function s3Delete(key) {
@@ -666,7 +662,10 @@ app.get("/p/:slug(*)", async (req, res) => {
       background:linear-gradient(135deg,#f97316,#ef4444);
       display:inline-grid;place-items:center;font-size:8px">&#9889;</span>
     Shipfast</a>`;
-  const finalHtml = html.replace("</body>", badge + "</body>");
+  const lastBodyIdx = html.lastIndexOf("</body>");
+  const finalHtml = lastBodyIdx === -1
+    ? html + badge
+    : html.slice(0, lastBodyIdx) + badge + html.slice(lastBodyIdx);
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(finalHtml);
 });
@@ -1583,7 +1582,7 @@ function renderBreadcrumbs() {
   bc.style.display = 'flex';
   bc.className = 'breadcrumbs';
   
-  let html = '<a onclick="navigateToFolder(\'\')">All Pages</a>';
+  let html = '<a onclick="navigateToFolder(\'\')" style="cursor:pointer">All Pages</a>';
   if (currentFolder) {
     const parts = currentFolder.split('/');
     let path = '';
@@ -1593,7 +1592,7 @@ function renderBreadcrumbs() {
       if (index === parts.length - 1) {
         html += '<span class="curr">' + esc(part) + '</span>';
       } else {
-        html += '<a onclick="navigateToFolder(\'' + path.replace(/'/g, "\\'") + '\')">' + esc(part) + '</a>';
+        html += '<a onclick="navigateToFolder(\'' + path.replace(/'/g, '\\\'') + '\')" style="cursor:pointer">' + esc(part) + '</a>';
       }
     });
   }
@@ -1707,7 +1706,7 @@ function openModal(isEdit){
   const h=document.querySelector('#modalStep1 .modal-header h2');
   h.textContent=editingSlug?'Edit Page':'Publish a Page';
   publishBtn.textContent=editingSlug?'Update':'Publish';
-  setTimeout(()=>(editingSlug?htmlInput:htmlInput).focus(),100);
+  setTimeout(()=>(editingSlug?slugInput:htmlInput).focus(),100);
 }
 function closeModal(){ document.getElementById('modalOverlay').classList.remove('open'); editingSlug=null; }
 function resetModalFields(){
@@ -1778,7 +1777,7 @@ async function publish(){
   }catch(err){
     showToast('Network error','err');
   }
-  finally{publishBtn.classList.remove('loading');publishBtn.textContent='Publish'}
+  finally{publishBtn.classList.remove('loading');publishBtn.textContent=editingSlug?'Update':'Publish'}
 }
 function copyUrl(){
   navigator.clipboard.writeText(document.getElementById('successUrl').href).then(()=>{
@@ -1794,7 +1793,6 @@ function copyPageUrl(e,slug){
 }
 
 // ── Delete with undo ──
-let pendingDeleteSlug=null, undoTimer=null;
 function deletePage(e,slug){ e.stopPropagation();e.preventDefault(); pendingDeleteSlug=slug;
   document.getElementById('deleteSlugName').textContent='/p/'+slug;
   document.getElementById('deleteOverlay').classList.add('open');
@@ -1820,7 +1818,7 @@ async function confirmDelete(){
 async function undoDelete(){
   const b=window._undoBackup; if(!b) return;
   window._undoBackup=null; clearTimeout(undoTimer);
-  await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:b.slug,html:b.source})});
+  await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug:b.slug,html:b.source,access:b.access})});
   loadPages(); showToast('Restored /p/'+b.slug,'ok');
 }
 
@@ -1945,7 +1943,7 @@ function renderPages(query){
     }
     el.innerHTML = '<div class="card-grid">' + filtered.map(p => renderPageCardHtml(p)).join('') + '</div>';
   }
-
+}
 
 async function loadPages(){
   allPages=await fetch('/api/pages').then(r=>r.json());
