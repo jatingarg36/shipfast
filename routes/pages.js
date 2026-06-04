@@ -38,9 +38,13 @@ router.get("/p/:slug(*)", async (req, res) => {
   }
 
   // Fire-and-forget: increment view counter (non-blocking, bot-filtered)
+  // Skip iframe loads (e.g. dashboard thumbnails) — only count direct navigation
   const redisClient = req.app.locals.redisClient;
   const userAgent = req.headers["user-agent"] || "";
-  viewsService.incrementView(redisClient, req.params.slug, userAgent);
+  const fetchDest = req.headers["sec-fetch-dest"] || "";
+  if (fetchDest !== "iframe") {
+    viewsService.incrementView(redisClient, req.params.slug, userAgent);
+  }
 
   // Read view count for inline SSR display
   let viewCount = 0;
