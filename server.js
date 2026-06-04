@@ -127,4 +127,4 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`Google OAuth: ${config.GOOGLE_AUTH_ENABLED ? "enabled" : "disabled"}`);
 });
 
-module.exports = { app, redisClient };
+module.exports = app;
