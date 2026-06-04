@@ -2,6 +2,7 @@ const express = require("express");
 const s3Service = require("../services/s3");
 const pageService = require("../services/page");
 const authMiddleware = require("../middleware/auth");
+const viewsService = require("../services/views");
 const { notFoundHtml } = require("../templates/pages");
 
 /**
@@ -10,6 +11,17 @@ const { notFoundHtml } = require("../templates/pages");
  */
 
 const router = express.Router();
+
+/**
+ * Format a view count for display: 1234567 → "1.2M", 12345 → "12.3K", etc.
+ * @param {number} n
+ * @returns {string}
+ */
+function formatViews(n) {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(1).replace(/\.0$/, "") + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(1).replace(/\.0$/, "") + "K";
+  return n.toLocaleString();
+}
 
 /**
  * GET /p/:slug
@@ -25,7 +37,22 @@ router.get("/p/:slug(*)", async (req, res) => {
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
 
-  // Add Shipfast badge to page
+  // Fire-and-forget: increment view counter (non-blocking, bot-filtered)
+  const redisClient = req.app.locals.redisClient;
+  const userAgent = req.headers["user-agent"] || "";
+  viewsService.incrementView(redisClient, req.params.slug, userAgent);
+
+  // Read view count for inline SSR display
+  let viewCount = 0;
+  try {
+    viewCount = await viewsService.getViewCount(redisClient, req.params.slug);
+  } catch (_) {
+    // Non-critical — show 0 on error
+  }
+
+  const viewsLabel = formatViews(viewCount);
+
+  // Add Shipfast badge (with view count) to page
   const badge = `<a href="/" style="position:fixed;bottom:12px;right:12px;z-index:99999;
     background:rgba(12,10,9,.9);border:1px solid rgba(255,255,255,.08);
     backdrop-filter:blur(12px);border-radius:8px;padding:5px 10px;
@@ -35,7 +62,13 @@ router.get("/p/:slug(*)", async (req, res) => {
     <span style="width:16px;height:16px;border-radius:4px;
       background:linear-gradient(135deg,#f97316,#ef4444);
       display:inline-grid;place-items:center;font-size:8px">&#9889;</span>
-    Shipfast</a>`;
+    Shipfast
+    <span style="opacity:.5;font-weight:400;margin-left:2px">&#x2022;</span>
+    <span style="display:flex;align-items:center;gap:3px;color:rgba(251,146,60,.8);font-size:10px">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      ${viewsLabel}
+    </span>
+  </a>`;
 
   const lastBodyIdx = html.lastIndexOf("</body>");
   const finalHtml =

@@ -1050,9 +1050,19 @@ const clockSvg = '<svg width="12" height="12" fill="none" stroke="currentColor" 
 const editSvg  = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
 const copySvg  = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
 
+function fmtViews(n) {
+  if (!n) return '0';
+  if (n >= 1e6) return (n/1e6).toFixed(1).replace(/\\.0$/,'') + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1).replace(/\\.0$/,'') + 'K';
+  return n.toLocaleString();
+}
+
+const eyeSvg = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+
 function renderPageCardHtml(p) {
   const ago = timeAgo(new Date(p.updated)), desc = p.description || 'A page shipped with Shipfast';
   const mine = canManage(p);
+  const viewsHtml = '<span style="display:inline-flex;align-items:center;gap:3px;color:var(--muted2);font-size:.7rem;margin-left:.5rem">' + eyeSvg + ' ' + fmtViews(p.views || 0) + '</span>';
   return '<a class="card" href="/p/' + p.slug + '" target="_blank">' +
     '<div class="card-body">' +
       '<div class="card-thumb"><iframe src="/p/' + p.slug + '" loading="lazy" tabindex="-1"></iframe></div>' +
@@ -1062,7 +1072,7 @@ function renderPageCardHtml(p) {
       '</div>' +
       '<div class="card-desc">' + esc(desc) + '</div>' +
       '<div class="card-footer">' +
-        '<div class="card-time">' + clockSvg + ' ' + ago + (p.ownerName?'<span style="margin-left:.3rem;color:var(--muted2)">by ' + esc(p.ownerName) + '</span>':'') + '</div>' +
+        '<div class="card-time">' + clockSvg + ' ' + ago + (p.ownerName?'<span style="margin-left:.3rem;color:var(--muted2)">by ' + esc(p.ownerName) + '</span>':'') + viewsHtml + '</div>' +
         '<div class="card-actions">' +
           (mine?'<button class="btn-edit" onclick="editPage(event,&apos;' + p.slug + '&apos;)">' + editSvg + ' Edit</button>':'') +
           '<button class="btn-copy" onclick="copyPageUrl(event,&apos;' + p.slug + '&apos;)">' + copySvg + ' Copy URL</button>' +

@@ -99,6 +99,9 @@ if (config.GOOGLE_AUTH_ENABLED) {
 
 // ── Mount Routes ──────────────────────────────────────────────────────────
 
+// Inject the shared Redis client into each router via app.locals
+app.locals.redisClient = redisClient;
+
 // Authentication routes
 app.use("/", authRoutes);
 
@@ -124,4 +127,4 @@ app.listen(PORT, "0.0.0.0", () => {
   console.log(`Google OAuth: ${config.GOOGLE_AUTH_ENABLED ? "enabled" : "disabled"}`);
 });
 
-module.exports = app;
+module.exports = { app, redisClient };
