@@ -3,6 +3,7 @@ const s3Service = require("../services/s3");
 const pageService = require("../services/page");
 const contentService = require("../services/content");
 const authMiddleware = require("../middleware/auth");
+const viewsService = require("../services/views");
 
 /**
  * API Routes
@@ -17,13 +18,34 @@ const router = express.Router();
  * - Admin: all pages
  * - Publisher: own + public pages
  * - Anon: public pages only
+ * Response includes a `views` field per page (batch Redis MGET)
  */
 router.get("/pages", async (req, res) => {
   const pages = await pageService.listPages();
   const user = authMiddleware.getCurrentUser(req);
-  if (!user) return res.json(pages.filter((p) => p.access === "public"));
-  if (user.role === "admin") return res.json(pages);
-  res.json(pages.filter((p) => p.access === "public" || p.owner === user.id));
+  const filtered = !user
+    ? pages.filter((p) => p.access === "public")
+    : user.role === "admin"
+    ? pages
+    : pages.filter((p) => p.access === "public" || p.owner === user.id);
+
+  // Attach view counts (single batch call)
+  const redisClient = req.app.locals.redisClient;
+  const slugs = filtered.map((p) => p.slug);
+  const viewCounts = await viewsService.getViewCounts(redisClient, slugs);
+  const result = filtered.map((p) => ({ ...p, views: viewCounts[p.slug] || 0 }));
+
+  res.json(result);
+});
+
+/**
+ * GET /api/views/:slug
+ * Return the view count for a single page
+ */
+router.get("/views/:slug(*)", async (req, res) => {
+  const redisClient = req.app.locals.redisClient;
+  const count = await viewsService.getViewCount(redisClient, req.params.slug);
+  res.json({ slug: req.params.slug, views: count });
 });
 
 /**

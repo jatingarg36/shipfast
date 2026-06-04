@@ -99,6 +99,9 @@ if (config.GOOGLE_AUTH_ENABLED) {
 
 // ── Mount Routes ──────────────────────────────────────────────────────────
 
+// Inject the shared Redis client into each router via app.locals
+app.locals.redisClient = redisClient;
+
 // Authentication routes
 app.use("/", authRoutes);
 
