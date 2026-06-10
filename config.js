@@ -29,9 +29,16 @@ const config = {
   GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET,
 
+  // AI Assistant configuration (RDS Postgres for chat metadata)
+  DATABASE_URL: process.env.DATABASE_URL,
+
   // Computed flags
   IS_PRODUCTION: process.env.NODE_ENV === "production",
 };
+
+// AI Assistant enabled flag — feature is off unless a Postgres URL is configured.
+// The assistant API key itself NEVER reaches the server; only chat transcripts do.
+config.ASSISTANT_ENABLED = !!process.env.DATABASE_URL;
 
 // Google Auth enabled flag
 config.GOOGLE_AUTH_ENABLED = !!(

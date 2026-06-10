@@ -15,6 +15,8 @@ const { dashboardHtml } = require("./templates/dashboard");
 const authRoutes = require("./routes/auth");
 const apiRoutes = require("./routes/api");
 const pageRoutes = require("./routes/pages");
+const settingsRoutes = require("./routes/settings");
+const assistantRoutes = require("./routes/assistant");
 
 /**
  * ──────────────────────────────────────────────────────────────────────────
@@ -107,6 +109,12 @@ app.use("/", authRoutes);
 
 // API routes (all under /api/pages)
 app.use("/api", apiRoutes);
+
+// Settings page
+app.use("/", settingsRoutes);
+
+// AI assistant (widget delivery + chat persistence API)
+app.use("/", assistantRoutes);
 
 // Page serving routes
 app.use("/", pageRoutes);

@@ -30,6 +30,22 @@ services:
       timeout: 5s
       retries: 3
 
+  # Postgres — local stand-in for RDS (AI assistant chat metadata)
+  # Set DATABASE_URL=postgres://shipfast:shipfast@localhost:5432/shipfast in .env.local
+  postgres:
+    image: postgres:16-alpine
+    container_name: shipfast-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: shipfast
+      POSTGRES_PASSWORD: shipfast
+      POSTGRES_DB: shipfast
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./migrations:/docker-entrypoint-initdb.d:ro
+
   # One-shot container that creates the bucket on first start
   minio-init:
     image: minio/mc:latest
@@ -47,3 +63,4 @@ services:
 volumes:
   redis-data:
   minio-data:
+  postgres-data:
