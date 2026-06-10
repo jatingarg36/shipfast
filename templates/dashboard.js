@@ -106,7 +106,7 @@ nav{
 .wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 2rem 6rem}
 
 /* ── Hero ── */
-.hero{padding:4.5rem 0 3rem;max-width:700px;margin:0 auto;text-align:center}
+.hero{padding:2.5rem 0 2rem;max-width:700px;margin:0 auto;text-align:center}
 .hero h2{font-size:3rem;font-weight:900;letter-spacing:-.05em;line-height:1.1}
 .hero .grad{
   background:linear-gradient(135deg,var(--accent),var(--warm),var(--accent2));
@@ -116,12 +116,13 @@ nav{
 }
 @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
 .hero p{color:var(--muted);font-size:.95rem;margin-top:.75rem;line-height:1.6;max-width:420px;margin-left:auto;margin-right:auto}
-.hero-cta{margin-top:1.75rem;display:flex;gap:.75rem;justify-content:center;align-items:center}
+.hero-cta{margin-top:1.25rem;display:flex;gap:.75rem;justify-content:center;align-items:center}
 .hero-cta .btn{padding:.65rem 1.6rem;font-size:.88rem;border-radius:10px}
 .hero-cta .shortcut-hint{font-size:.7rem;color:var(--muted2);font-family:var(--mono)}
-.nav-stats{display:flex;align-items:center;gap:1rem;margin-right:.5rem}
-.nav-stat{display:flex;align-items:baseline;gap:.3rem;font-size:.75rem;color:var(--muted)}
-.nav-stat-num{font-weight:700;font-size:.8rem;color:var(--text);font-family:var(--mono)}
+.nav-stats{display:flex;align-items:center;gap:.65rem;margin-right:.85rem;padding:.3rem .7rem;background:var(--surface2);border:1px solid var(--border);border-radius:999px}
+.nav-stat{display:flex;align-items:baseline;gap:.3rem;font-size:.72rem;color:var(--muted);line-height:1}
+.nav-stat+.nav-stat{padding-left:.65rem;border-left:1px solid var(--border)}
+.nav-stat-num{font-weight:700;font-size:.78rem;color:var(--text);font-family:var(--mono)}
 
 /* ── Section ── */
 .section-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
@@ -165,6 +166,7 @@ nav{
 .card-title{font-size:.95rem;font-weight:700;letter-spacing:-.02em;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card-slug-inline{font-family:var(--mono);font-size:.65rem;color:var(--muted2);margin-top:.2rem}
 .card-desc{font-size:.8rem;color:var(--muted);line-height:1.6;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:.85rem}
+.card-desc--empty{visibility:hidden}
 
 .card-footer{
   display:flex;align-items:center;gap:.5rem;
@@ -336,14 +338,15 @@ kbd{
 
 /* ── Card thumbnail ── */
 .card-thumb{
-  width:100%;height:140px;border-radius:8px;overflow:hidden;
+  width:100%;aspect-ratio:16/9;border-radius:8px;overflow:hidden;
   margin-bottom:.85rem;background:var(--surface3);border:1px solid var(--border);
   position:relative;transition:border-color .25s;
 }
 .card:hover .card-thumb{border-color:var(--border-hover)}
 .card-thumb iframe{
-  width:200%;height:200%;border:none;
-  transform:scale(.5);transform-origin:top left;
+  position:absolute;top:0;left:0;
+  width:250%;height:250%;border:none;
+  transform:scale(.4);transform-origin:top left;
   pointer-events:none;
 }
 
@@ -437,7 +440,7 @@ kbd{
 /* ── Responsive ── */
 @media(max-width:640px){
   .nav-inner,.wrap{padding-left:1rem;padding-right:1rem}
-  .hero{padding:3rem 0 2rem}
+  .hero{padding:1.75rem 0 1.5rem}
   .hero h2{font-size:2rem}
   .hero p{font-size:.85rem}
   .hero-cta .btn{padding:.55rem 1.2rem;font-size:.82rem}
@@ -598,10 +601,10 @@ kbd{
       <div class="nav-logo">S</div>
       <div class="nav-title">Ship<span>fast</span></div>
     </a>
-    <div style="display:flex;gap:.5rem;align-items:center">
+    <div style="display:flex;gap:.75rem;align-items:center">
       <div class="nav-stats">
         <div class="nav-stat"><span class="nav-stat-num" id="totalPages">0</span> shipped</div>
-        <div class="nav-stat"><span class="nav-stat-num" id="lastPublished">&mdash;</span> latest</div>
+        <div class="nav-stat" title="Last published"><span class="nav-stat-num" id="lastPublished">&mdash;</span></div>
       </div>
       ${
         isLoggedIn
@@ -1120,7 +1123,8 @@ function fmtViews(n) {
 const eyeSvg = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 
 function renderPageCardHtml(p) {
-  const ago = timeAgo(new Date(p.updated)), desc = p.description || 'A page shipped with Shipfast';
+  const ago = timeAgo(new Date(p.updated));
+  const desc = (p.description || '').trim();
   const mine = canManage(p);
   const viewsHtml = '<span style="display:inline-flex;align-items:center;gap:3px;color:var(--muted2);font-size:.7rem;margin-left:.5rem">' + eyeSvg + ' ' + fmtViews(p.views || 0) + '</span>';
   return '<a class="card" href="/p/' + p.slug + '" target="_blank">' +
@@ -1130,7 +1134,7 @@ function renderPageCardHtml(p) {
         '<div class="card-title">' + esc(p.title) + '</div>' +
         '<div class="card-slug-inline">/p/' + p.slug + (p.access==='publisher'?'<span class="lock-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Publisher</span>':'') + '</div>' +
       '</div>' +
-      '<div class="card-desc">' + esc(desc) + '</div>' +
+      (desc ? '<div class="card-desc">' + esc(desc) + '</div>' : '<div class="card-desc card-desc--empty">&nbsp;</div>') +
       '<div class="card-footer">' +
         '<div class="card-time">' + clockSvg + ' ' + ago + (p.ownerName?'<span style="margin-left:.3rem;color:var(--muted2)">by ' + esc(p.ownerName) + '</span>':'') + viewsHtml + '</div>' +
         '<div class="card-actions">' +
