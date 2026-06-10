@@ -1,0 +1,111 @@
+<!--
+  Assistant panel document.
+  Read at runtime by panel/index.js. Two markers below are substituted in:
+    - the placeholder inside <style>  becomes panel/styles.css
+    - the placeholder inside <script> becomes panel/script.js (with slug
+      and system prompt interpolated)
+  Everything else is static markup — edit freely without touching JS modules.
+  NOTE: don't write the literal substitution markers anywhere else in this
+  file; String.replace targets the first match only.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AI Assistant</title>
+<style>
+/*__STYLES__*/
+</style>
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────────────── -->
+<header class="sf-header">
+  <div class="sf-header__title">
+    <div class="sf-logo">&#9889;</div>
+    <div class="sf-title">
+      <div class="sf-title__name">AI Assistant</div>
+      <div class="sf-title__sub" id="sfSubtitle">Ask about this page</div>
+    </div>
+    <button class="sf-iconbtn" id="closeBtn" title="Close (Esc)" aria-label="Close">&times;</button>
+  </div>
+  <div class="sf-header__meta">
+    <select class="sf-select" id="chatList" title="Chat history" aria-label="Chat history">
+      <option value="">New chat</option>
+    </select>
+    <button class="sf-iconbtn" id="newChat" title="Start a fresh chat" aria-label="New chat">+</button>
+  </div>
+</header>
+
+<!-- ── Setup view (shown when no API key is configured) ─────────────────── -->
+<div class="sf-setup" id="setup">
+  <div class="sf-setup__title">Enable AI Assistant</div>
+  <div class="sf-setup__note">
+    Your API key is stored only in this browser and is sent directly to your
+    LLM provider &mdash; it never reaches ShipFast servers. Manage or revoke
+    it any time from <a href="/settings" target="_top">Settings</a>.
+  </div>
+
+  <label for="suProvider">Provider</label>
+  <select id="suProvider">
+    <option value="anthropic">Anthropic (Claude)</option>
+    <option value="openai">OpenAI</option>
+    <option value="gemini">Google Gemini</option>
+    <option value="litellm">LiteLLM proxy</option>
+    <option value="custom">OpenAI-compatible (custom URL)</option>
+  </select>
+
+  <label for="suKey">API key</label>
+  <input id="suKey" type="password" placeholder="sk-..." autocomplete="off"/>
+
+  <div id="suBaseWrap" style="display:none">
+    <label for="suBase">Base URL</label>
+    <input id="suBase" type="text" placeholder="https://my-llm.example.com/v1"/>
+  </div>
+
+  <label for="suModel">Model <span style="font-weight:400;text-transform:none">(optional, provider default used)</span></label>
+  <input id="suModel" type="text" placeholder="leave blank for default"/>
+
+  <button class="sf-setup__save" id="suSave">Enable assistant</button>
+</div>
+
+<!-- ── Messages list ────────────────────────────────────────────────────── -->
+<div class="sf-body" id="msgs" style="display:none">
+  <div class="hint" id="hint">
+    Ask anything about this page, or select text on the page and click
+    &ldquo;Ask AI about this&rdquo;.
+  </div>
+</div>
+
+<!-- ── Inline error ─────────────────────────────────────────────────────── -->
+<div class="err" id="err" style="display:none"></div>
+
+<!-- ── Composer (bordered card) ─────────────────────────────────────────── -->
+<div class="sf-composer" id="composer" style="display:none">
+  <div class="sf-composer__card">
+    <div class="sf-selchip" id="selchip">
+      <span id="selchipText"></span>
+      <button id="selclear" type="button" aria-label="Clear selection">&times;</button>
+    </div>
+    <textarea
+      class="sf-input"
+      id="input"
+      placeholder="Ask about this page&hellip;"
+      maxlength="4000"
+      rows="1"></textarea>
+    <div class="sf-composer__actions">
+      <div class="sf-composer__hint">Enter to send &middot; Shift+Enter for newline</div>
+      <button class="sf-send" id="sendBtn" type="button">
+        <span id="sendIcon">&#10148;</span>
+        <span id="sendLabel">Send</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+/*__SCRIPT__*/
+</script>
+</body>
+</html>
