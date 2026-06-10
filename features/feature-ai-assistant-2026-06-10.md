@@ -14,7 +14,7 @@ Logged-in users can enable an AI assistant on any published ShipFast page (`/p/:
 | 4 | Revoke anytime, keep chats | ✅ Revoke = clear key from `sessionStorage` + disable widget flag. Server-side chats untouched. |
 | 5 | Chats per page, per user | ✅ SQL rows scoped `(user_id, page_slug)`; every API route enforces ownership. |
 | 6 | No cross-user visibility | ✅ All chat routes behind `requireAuth` + `user_id = current user` filter. EFS paths are namespaced by user id and never accepted from the client. |
-| 7 | Any LLM provider | ✅ Provider adapter in the widget: Anthropic, OpenAI, Google Gemini, plus "OpenAI-compatible" custom base URL. Note: not every provider allows browser CORS; Anthropic, OpenAI, and Gemini do. |
+| 7 | Any LLM provider | ✅ Provider adapter in the widget: Anthropic, OpenAI, Google Gemini, LiteLLM proxy, plus "OpenAI-compatible" custom base URL. Note: not every provider allows browser CORS; Anthropic, OpenAI, and Gemini do; LiteLLM/custom proxies must enable CORS for the ShipFast origin. |
 
 ## High-Level Architecture
 

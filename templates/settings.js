@@ -92,6 +92,7 @@ function settingsHtml(user) {
       <option value="anthropic">Anthropic (Claude)</option>
       <option value="openai">OpenAI</option>
       <option value="gemini">Google Gemini</option>
+      <option value="litellm">LiteLLM proxy</option>
       <option value="custom">OpenAI-compatible (custom URL)</option>
     </select>
 
@@ -103,7 +104,10 @@ function settingsHtml(user) {
 
     <div id="baseWrap" style="display:none">
       <label>Base URL</label>
-      <input id="baseUrl" type="text" placeholder="https://my-llm.example.com/v1"/>
+      <input id="baseUrl" type="text" placeholder="e.g. https://litellm.mycompany.com/v1"/>
+      <div class="note" style="margin-top:.35rem">For LiteLLM: your proxy's OpenAI-compatible
+        endpoint. The proxy must allow CORS from this site, and the model field should match
+        a model/alias configured on the proxy.</div>
     </div>
 
     <label>Model <span style="font-weight:400;text-transform:none">(optional &mdash; provider default used if blank)</span></label>
@@ -129,6 +133,7 @@ function settingsHtml(user) {
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
+  var needsBase = function (p) { return p === "custom" || p === "litellm"; };
 
   function refresh() {
     var on = sessionStorage.getItem("sf_ai_enabled") === "1" && sessionStorage.getItem("sf_ai_key");
@@ -139,7 +144,7 @@ function settingsHtml(user) {
     $("apiKey").value = sessionStorage.getItem("sf_ai_key") || "";
     $("baseUrl").value = sessionStorage.getItem("sf_ai_base") || "";
     $("model").value = sessionStorage.getItem("sf_ai_model") || "";
-    $("baseWrap").style.display = $("provider").value === "custom" ? "block" : "none";
+    $("baseWrap").style.display = needsBase($("provider").value) ? "block" : "none";
   }
 
   function setStatus(text, ok) {
@@ -149,7 +154,7 @@ function settingsHtml(user) {
   }
 
   $("provider").onchange = function () {
-    $("baseWrap").style.display = this.value === "custom" ? "block" : "none";
+    $("baseWrap").style.display = needsBase(this.value) ? "block" : "none";
   };
 
   $("toggleKey").onclick = function () {
@@ -161,8 +166,8 @@ function settingsHtml(user) {
   $("saveBtn").onclick = function () {
     var key = $("apiKey").value.trim();
     if (!key) { setStatus("Enter an API key first.", false); return; }
-    if ($("provider").value === "custom" && !$("baseUrl").value.trim()) {
-      setStatus("Base URL is required for a custom provider.", false); return;
+    if (needsBase($("provider").value) && !$("baseUrl").value.trim()) {
+      setStatus("Base URL is required for this provider.", false); return;
     }
     sessionStorage.setItem("sf_ai_enabled", "1");
     sessionStorage.setItem("sf_ai_provider", $("provider").value);
@@ -206,10 +211,11 @@ function settingsHtml(user) {
         body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "hi" }] }] }),
       });
     } else {
-      var base = provider === "custom"
+      // openai, litellm, custom — all OpenAI-compatible
+      var base = needsBase(provider)
         ? $("baseUrl").value.trim().replace(/\\/+$/, "")
         : "https://api.openai.com/v1";
-      if (!base) { setStatus("Base URL is required for a custom provider.", false); return; }
+      if (!base) { setStatus("Base URL is required for this provider.", false); return; }
       req = fetch(base + "/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },

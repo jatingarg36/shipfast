@@ -234,6 +234,7 @@ function assistantPanelHtml(slug) {
     <option value="anthropic">Anthropic (Claude)</option>
     <option value="openai">OpenAI</option>
     <option value="gemini">Google Gemini</option>
+    <option value="litellm">LiteLLM proxy</option>
     <option value="custom">OpenAI-compatible (custom URL)</option>
   </select>
   <label>API key</label>
@@ -273,6 +274,7 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     anthropic: "claude-sonnet-4-6",
     openai: "gpt-4o-mini",
     gemini: "gemini-2.0-flash",
+    litellm: "",
     custom: "",
   };
 
@@ -294,12 +296,17 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     if (ok) loadChatList();
   }
 
+  function needsBase(p) { return p === "custom" || p === "litellm"; }
+
   el("suProvider").onchange = function () {
-    el("suBaseWrap").style.display = this.value === "custom" ? "block" : "none";
+    el("suBaseWrap").style.display = needsBase(this.value) ? "block" : "none";
   };
   el("suSave").onclick = function () {
     var key = el("suKey").value.trim();
     if (!key) { showErr("Enter an API key"); return; }
+    if (needsBase(el("suProvider").value) && !el("suBase").value.trim()) {
+      showErr("Base URL is required for this provider"); return;
+    }
     sessionStorage.setItem("sf_ai_enabled", "1");
     sessionStorage.setItem("sf_ai_provider", el("suProvider").value);
     sessionStorage.setItem("sf_ai_key", key);
@@ -490,11 +497,13 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
       });
     }
 
-    if (provider === "openai" || provider === "custom") {
-      var base = provider === "custom"
+    // LiteLLM exposes an OpenAI-compatible /chat/completions endpoint,
+    // so it shares the OpenAI adapter (key sent as Bearer to the proxy)
+    if (provider === "openai" || provider === "custom" || provider === "litellm") {
+      var base = needsBase(provider)
         ? S.base().replace(/\\/+$/, "")
         : "https://api.openai.com/v1";
-      if (!base) return Promise.reject(new Error("Base URL required for custom provider"));
+      if (!base) return Promise.reject(new Error("Base URL required for this provider"));
       return fetch(base + "/chat/completions", {
         method: "POST",
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + S.key() },
