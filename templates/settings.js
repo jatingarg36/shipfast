@@ -3,7 +3,7 @@
  * Single Responsibility: render the user settings page.
  *
  * The AI Assistant section is entirely client-side: provider/key/model are
- * stored in sessionStorage and NEVER sent to the server. Revoking clears the
+ * stored in localStorage and NEVER sent to the server. Revoking clears the
  * key locally; saved chats are kept server-side.
  */
 
@@ -84,7 +84,7 @@ function settingsHtml(user) {
   <div class="card">
     <h2>AI Assistant <span class="pill off" id="statusPill">Disabled</span></h2>
     <div class="sub">Chat with an AI about any published page. Your API key is stored
-      only in this browser tab's session and is sent directly to your LLM provider
+      only in this browser and is sent directly to your LLM provider
       &mdash; it never reaches ShipFast servers.</div>
 
     <label>Provider</label>
@@ -123,8 +123,8 @@ function settingsHtml(user) {
     <div class="note">
       <b>Revoking</b> removes the key from this browser and disables the assistant;
       your saved chats are kept and reappear when you re-enable.
-      The key lives in <i>session storage</i>: it applies to this tab and is gone
-      when the tab closes &mdash; you'll re-enter it next session.
+      The key lives in this browser's <i>local storage</i>: it works across tabs and
+      survives restarts, and is removed only when you revoke it here.
     </div>
   </div>
 </div>
@@ -136,14 +136,14 @@ function settingsHtml(user) {
   var needsBase = function (p) { return p === "custom" || p === "litellm"; };
 
   function refresh() {
-    var on = sessionStorage.getItem("sf_ai_enabled") === "1" && sessionStorage.getItem("sf_ai_key");
+    var on = localStorage.getItem("sf_ai_enabled") === "1" && localStorage.getItem("sf_ai_key");
     var pill = $("statusPill");
     pill.textContent = on ? "Enabled" : "Disabled";
     pill.className = "pill " + (on ? "on" : "off");
-    $("provider").value = sessionStorage.getItem("sf_ai_provider") || "anthropic";
-    $("apiKey").value = sessionStorage.getItem("sf_ai_key") || "";
-    $("baseUrl").value = sessionStorage.getItem("sf_ai_base") || "";
-    $("model").value = sessionStorage.getItem("sf_ai_model") || "";
+    $("provider").value = localStorage.getItem("sf_ai_provider") || "anthropic";
+    $("apiKey").value = localStorage.getItem("sf_ai_key") || "";
+    $("baseUrl").value = localStorage.getItem("sf_ai_base") || "";
+    $("model").value = localStorage.getItem("sf_ai_model") || "";
     $("baseWrap").style.display = needsBase($("provider").value) ? "block" : "none";
   }
 
@@ -169,21 +169,21 @@ function settingsHtml(user) {
     if (needsBase($("provider").value) && !$("baseUrl").value.trim()) {
       setStatus("Base URL is required for this provider.", false); return;
     }
-    sessionStorage.setItem("sf_ai_enabled", "1");
-    sessionStorage.setItem("sf_ai_provider", $("provider").value);
-    sessionStorage.setItem("sf_ai_key", key);
-    sessionStorage.setItem("sf_ai_base", $("baseUrl").value.trim());
-    sessionStorage.setItem("sf_ai_model", $("model").value.trim());
+    localStorage.setItem("sf_ai_enabled", "1");
+    localStorage.setItem("sf_ai_provider", $("provider").value);
+    localStorage.setItem("sf_ai_key", key);
+    localStorage.setItem("sf_ai_base", $("baseUrl").value.trim());
+    localStorage.setItem("sf_ai_model", $("model").value.trim());
     setStatus("Saved. The assistant is now available on your pages (this tab).", true);
     refresh();
   };
 
   $("revokeBtn").onclick = function () {
-    sessionStorage.removeItem("sf_ai_enabled");
-    sessionStorage.removeItem("sf_ai_key");
-    sessionStorage.removeItem("sf_ai_provider");
-    sessionStorage.removeItem("sf_ai_base");
-    sessionStorage.removeItem("sf_ai_model");
+    localStorage.removeItem("sf_ai_enabled");
+    localStorage.removeItem("sf_ai_key");
+    localStorage.removeItem("sf_ai_provider");
+    localStorage.removeItem("sf_ai_base");
+    localStorage.removeItem("sf_ai_model");
     setStatus("Access revoked — key removed from this browser. Saved chats are kept.", true);
     refresh();
   };
@@ -204,10 +204,11 @@ function settingsHtml(user) {
           max_tokens: 1, messages: [{ role: "user", content: "hi" }] }),
       });
     } else if (provider === "gemini") {
-      var m = $("model").value.trim() || "gemini-2.0-flash";
+      var m = $("model").value.trim() || "gemini-flash-latest";
       req = fetch("https://generativelanguage.googleapis.com/v1beta/models/" +
-        encodeURIComponent(m) + ":generateContent?key=" + encodeURIComponent(key), {
-        method: "POST", headers: { "Content-Type": "application/json" },
+        encodeURIComponent(m) + ":generateContent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-goog-api-key": key },
         body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "hi" }] }] }),
       });
     } else {

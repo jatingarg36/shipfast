@@ -4,7 +4,7 @@
  * published pages) and the chat panel HTML (rendered inside a sandboxed iframe).
  *
  * Security model:
- * - The LLM API key lives in browser sessionStorage only and is read inside
+ * - The LLM API key lives in browser localStorage only and is read inside
  *   the panel iframe. It is sent directly to the LLM provider — never to
  *   ShipFast.
  * - The panel runs in an iframe so page-authored scripts/styles can't touch
@@ -178,6 +178,7 @@ function assistantPanelHtml(slug) {
   .iconbtn { background:none; border:1px solid var(--border); color:var(--muted);
     border-radius:6px; padding:.3rem .55rem; cursor:pointer; font-size:.75rem; flex:none; }
   .iconbtn:hover { color:var(--accent); border-color:rgba(251,146,60,.4); }
+  .iconbtn:disabled, select:disabled { opacity:.45; cursor:default; }
   #msgs { flex:1; overflow-y:auto; padding: .9rem .75rem; display:flex;
     flex-direction:column; gap:.65rem; }
   .msg { max-width:92%; padding:.55rem .7rem; border-radius:10px; font-size:.83rem;
@@ -188,6 +189,16 @@ function assistantPanelHtml(slug) {
     border:1px solid var(--border); }
   .msg .sel { display:block; border-left:3px solid var(--accent); padding:.15rem .5rem;
     margin-bottom:.4rem; color:var(--muted); font-size:.74rem; font-style:italic; }
+  .msg.assistant.failed { border-color:rgba(239,68,68,.45); color:#fca5a5; }
+  .retrybtn { display:block; margin-top:.5rem; background:rgba(251,146,60,.12);
+    border:1px solid rgba(251,146,60,.4); color:var(--accent); border-radius:6px;
+    padding:.3rem .7rem; font:600 .72rem Inter,system-ui,sans-serif; cursor:pointer; }
+  .retrybtn:hover { background:rgba(251,146,60,.2); }
+  .tdots i { display:inline-block; width:6px; height:6px; border-radius:50%;
+    background:var(--muted); margin-right:4px; animation:sfBlink 1.2s infinite; }
+  .tdots i:nth-child(2) { animation-delay:.2s; }
+  .tdots i:nth-child(3) { animation-delay:.4s; }
+  @keyframes sfBlink { 0%,80%,100% { opacity:.2 } 40% { opacity:1 } }
   .hint { color:var(--muted); font-size:.78rem; text-align:center; margin:auto;
     padding:1rem; }
   .err { color:#fca5a5; font-size:.75rem; padding:.4rem .75rem; }
@@ -226,9 +237,9 @@ function assistantPanelHtml(slug) {
 
 <div id="setup">
   <div style="font-weight:700">Enable AI Assistant</div>
-  <div class="note">Your API key is stored only in this browser tab's session storage
+  <div class="note">Your API key is stored only in this browser
     and is sent directly to your LLM provider &mdash; it never reaches ShipFast servers.
-    Manage it any time from <a href="/settings" target="_top">Settings</a>.</div>
+    Manage or revoke it any time from <a href="/settings" target="_top">Settings</a>.</div>
   <label>Provider</label>
   <select id="suProvider">
     <option value="anthropic">Anthropic (Claude)</option>
@@ -253,7 +264,7 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
 <div id="selchip"><span id="selchipText"></span><button id="selclear">&times;</button></div>
 <div class="err" id="err" style="display:none"></div>
 <footer style="display:none" id="composer">
-  <textarea id="input" placeholder="Ask about this page&hellip;"></textarea>
+  <textarea id="input" placeholder="Ask about this page&hellip;" maxlength="4000"></textarea>
   <button class="send" id="sendBtn">&#10148;</button>
 </footer>
 
@@ -263,17 +274,17 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
   var SLUG = ${SLUG_JSON};
   var ORIGIN = location.origin;
   var S = {
-    enabled: function () { return sessionStorage.getItem("sf_ai_enabled") === "1"; },
-    key: function () { return sessionStorage.getItem("sf_ai_key") || ""; },
-    provider: function () { return sessionStorage.getItem("sf_ai_provider") || "anthropic"; },
-    base: function () { return sessionStorage.getItem("sf_ai_base") || ""; },
-    model: function () { return sessionStorage.getItem("sf_ai_model") || ""; },
+    enabled: function () { return localStorage.getItem("sf_ai_enabled") === "1"; },
+    key: function () { return localStorage.getItem("sf_ai_key") || ""; },
+    provider: function () { return localStorage.getItem("sf_ai_provider") || "anthropic"; },
+    base: function () { return localStorage.getItem("sf_ai_base") || ""; },
+    model: function () { return localStorage.getItem("sf_ai_model") || ""; },
   };
 
   var DEFAULT_MODELS = {
     anthropic: "claude-sonnet-4-6",
     openai: "gpt-4o-mini",
-    gemini: "gemini-2.0-flash",
+    gemini: "gemini-flash-latest",
     litellm: "",
     custom: "",
   };
@@ -283,6 +294,9 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
   var history = [];           // [{role, content, selection?}] — full, for UI + persistence
   var pendingSelection = "";
   var busy = false;
+  var controller = null;      // AbortController for the in-flight provider call
+  var stoppedByUser = false;
+  var REQUEST_TIMEOUT_MS = 90000;
 
   var el = function (id) { return document.getElementById(id); };
   var msgs = el("msgs"), input = el("input"), err = el("err");
@@ -307,11 +321,11 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     if (needsBase(el("suProvider").value) && !el("suBase").value.trim()) {
       showErr("Base URL is required for this provider"); return;
     }
-    sessionStorage.setItem("sf_ai_enabled", "1");
-    sessionStorage.setItem("sf_ai_provider", el("suProvider").value);
-    sessionStorage.setItem("sf_ai_key", key);
-    sessionStorage.setItem("sf_ai_base", el("suBase").value.trim());
-    sessionStorage.setItem("sf_ai_model", el("suModel").value.trim());
+    localStorage.setItem("sf_ai_enabled", "1");
+    localStorage.setItem("sf_ai_provider", el("suProvider").value);
+    localStorage.setItem("sf_ai_key", key);
+    localStorage.setItem("sf_ai_base", el("suBase").value.trim());
+    localStorage.setItem("sf_ai_model", el("suModel").value.trim());
     refreshView();
   };
 
@@ -326,6 +340,12 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
   }
 
   // ── Chat rendering ───────────────────────────────────────────────────────
+  // Only auto-scroll when the user is already near the bottom — never yank
+  // them away while they're reading earlier messages.
+  function nearBottom() {
+    return msgs.scrollHeight - msgs.scrollTop - msgs.clientHeight < 80;
+  }
+
   function addBubble(role, content, selection) {
     var hint = el("hint");
     if (hint) hint.remove();
@@ -359,6 +379,9 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     opts.headers = Object.assign({ "Content-Type": "application/json" }, opts.headers || {});
     opts.credentials = "same-origin";
     return fetch(path, opts).then(function (r) {
+      if (r.status === 401) {
+        throw new Error("Your session expired — refresh the page and log in again.");
+      }
       if (!r.ok) return r.json().catch(function(){return {};}).then(function (b) {
         throw new Error(b.error || ("Request failed: " + r.status));
       });
@@ -382,6 +405,7 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
   }
 
   el("chatList").onchange = function () {
+    if (busy) { this.value = chatId || ""; return; } // no switching mid-generation
     var id = this.value;
     if (!id) { resetChat(); return; }
     api("/api/assistant/chats/" + id).then(function (data) {
@@ -441,6 +465,28 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     });
   }
 
+  // ── Provider errors → actionable messages ───────────────────────────────
+  function providerError(status, bodyText) {
+    var detail = "";
+    try {
+      var j = JSON.parse(bodyText);
+      detail = (j.error && (j.error.message || j.error)) || j.message || "";
+      if (typeof detail !== "string") detail = JSON.stringify(detail);
+    } catch (_) { detail = String(bodyText || "").slice(0, 180); }
+    var hint;
+    if (status === 401 || status === 403) hint = "Your API key was rejected. Check it in Settings.";
+    else if (status === 404) hint = "Model not found. Set a valid model name in Settings.";
+    else if (status === 429) hint = "Rate limited by the provider. Wait a moment and try again.";
+    else if (status >= 500) hint = "The provider is having issues. Try again shortly.";
+    else hint = "Provider error " + status + ".";
+    return new Error(hint + (detail ? " (" + detail.slice(0, 180) + ")" : ""));
+  }
+
+  function checkOk(r) {
+    if (r.ok) return r;
+    return r.text().then(function (t) { throw providerError(r.status, t); });
+  }
+
   // ── Provider adapters (browser → provider; key never touches ShipFast) ──
   function readSse(response, onText) {
     var reader = response.body.getReader();
@@ -473,7 +519,7 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     return pump();
   }
 
-  function callProvider(onText) {
+  function callProvider(onText, signal) {
     var provider = S.provider();
     var model = S.model() || DEFAULT_MODELS[provider];
     var msgsOut = providerMessages();
@@ -481,6 +527,7 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     if (provider === "anthropic") {
       return fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
+        signal: signal,
         headers: {
           "Content-Type": "application/json",
           "x-api-key": S.key(),
@@ -491,10 +538,7 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
           model: model, max_tokens: 1024, stream: true,
           system: systemPrompt(), messages: msgsOut,
         }),
-      }).then(function (r) {
-        if (!r.ok) return r.text().then(function (t) { throw new Error("Provider error " + r.status + ": " + t.slice(0, 200)); });
-        return readSse(r, onText);
-      });
+      }).then(checkOk).then(function (r) { return readSse(r, onText); });
     }
 
     // LiteLLM exposes an OpenAI-compatible /chat/completions endpoint,
@@ -506,15 +550,13 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
       if (!base) return Promise.reject(new Error("Base URL required for this provider"));
       return fetch(base + "/chat/completions", {
         method: "POST",
+        signal: signal,
         headers: { "Content-Type": "application/json", "Authorization": "Bearer " + S.key() },
         body: JSON.stringify({
           model: model || "gpt-4o-mini", stream: true,
           messages: [{ role: "system", content: systemPrompt() }].concat(msgsOut),
         }),
-      }).then(function (r) {
-        if (!r.ok) return r.text().then(function (t) { throw new Error("Provider error " + r.status + ": " + t.slice(0, 200)); });
-        return readSse(r, onText);
-      });
+      }).then(checkOk).then(function (r) { return readSse(r, onText); });
     }
 
     if (provider === "gemini") {
@@ -522,17 +564,15 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
         return { role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] };
       });
       return fetch("https://generativelanguage.googleapis.com/v1beta/models/" +
-        encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(S.key()), {
+        encodeURIComponent(model) + ":generateContent", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        signal: signal,
+        headers: { "Content-Type": "application/json", "X-goog-api-key": S.key() },
         body: JSON.stringify({
           system_instruction: { parts: [{ text: systemPrompt() }] },
           contents: contents,
         }),
-      }).then(function (r) {
-        if (!r.ok) return r.text().then(function (t) { throw new Error("Provider error " + r.status + ": " + t.slice(0, 200)); });
-        return r.json();
-      }).then(function (j) {
+      }).then(checkOk).then(function (r) { return r.json(); }).then(function (j) {
         var t = j.candidates && j.candidates[0] && j.candidates[0].content &&
           j.candidates[0].content.parts.map(function (p) { return p.text || ""; }).join("");
         onText(t || "(no response)");
@@ -546,13 +586,32 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
   function send() {
     var text = input.value.trim();
     if (!text || busy) return;
-    busy = true;
-    el("sendBtn").disabled = true;
     input.value = "";
-
     var selection = pendingSelection;
     pendingSelection = "";
     el("selchip").style.display = "none";
+    doSend(text, selection);
+  }
+
+  function setBusy(on) {
+    busy = on;
+    el("chatList").disabled = on;
+    el("newChat").disabled = on;
+    var btn = el("sendBtn");
+    btn.innerHTML = on ? "&#9632;" : "&#10148;"; // stop / send
+    btn.title = on ? "Stop generating" : "Send";
+  }
+
+  function doSend(text, selection) {
+    if (busy) return;
+    setBusy(true);
+    stoppedByUser = false;
+    controller = new AbortController();
+    var timedOut = false;
+    var timer = setTimeout(function () {
+      timedOut = true;
+      if (controller) controller.abort();
+    }, REQUEST_TIMEOUT_MS);
 
     var userMsg = { role: "user", content: text };
     if (selection) userMsg.selection = selection;
@@ -560,32 +619,75 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     addBubble("user", text, selection);
 
     var assistantBody = addBubble("assistant", "");
+    // typing indicator until the first token arrives
+    assistantBody.innerHTML = '<span class="tdots"><i></i><i></i><i></i></span>';
     var acc = "";
-    callProvider(function (chunk) {
-      acc += chunk;
-      assistantBody.textContent = acc;
-      msgs.scrollTop = msgs.scrollHeight;
-    }).then(function () {
-      if (!acc) acc = "(empty response)";
-      assistantBody.textContent = acc;
-      var assistantMsg = { role: "assistant", content: acc };
+
+    function finalize(suffix) {
+      assistantBody.textContent = acc + (suffix || "");
+      var assistantMsg = { role: "assistant", content: acc + (suffix || "") };
       history.push(assistantMsg);
       return persist([userMsg, assistantMsg]).catch(function (e) {
         showErr("Reply shown but not saved: " + e.message);
       });
+    }
+
+    callProvider(function (chunk) {
+      var stick = nearBottom();
+      acc += chunk;
+      assistantBody.textContent = acc; // replaces the indicator on first chunk
+      if (stick) msgs.scrollTop = msgs.scrollHeight;
+    }, controller.signal).then(function () {
+      if (!acc) acc = "(empty response)";
+      return finalize();
     }).catch(function (e) {
+      var aborted = e && (e.name === "AbortError" || e.code === 20);
+      // user stopped mid-stream with partial content → keep and save it
+      if (aborted && stoppedByUser && acc) return finalize(" \\u2026[stopped]");
+
       history.pop(); // drop unanswered user msg from provider context
-      assistantBody.textContent = "\\u26A0 " + e.message;
+      var message;
+      if (aborted && timedOut) message = "Timed out waiting for the provider (90s).";
+      else if (aborted) message = "Generation stopped.";
+      else if (e instanceof TypeError) message = "Could not reach the provider — network problem or the provider blocks browser (CORS) requests.";
+      else message = e.message;
+
+      var failedBubble = assistantBody.parentElement;
+      failedBubble.classList.add("failed");
+      assistantBody.textContent = "\\u26A0 " + message;
+      // one-click retry of the same message
+      var retry = document.createElement("button");
+      retry.className = "retrybtn";
+      retry.textContent = "\\u21BB Retry";
+      retry.onclick = function () {
+        if (busy) return;
+        var userBubble = failedBubble.previousElementSibling;
+        if (userBubble && userBubble.classList.contains("user")) userBubble.remove();
+        failedBubble.remove();
+        doSend(text, selection);
+      };
+      failedBubble.appendChild(retry);
     }).finally(function () {
-      busy = false;
-      el("sendBtn").disabled = false;
+      clearTimeout(timer);
+      controller = null;
+      setBusy(false);
       input.focus();
     });
   }
 
-  el("sendBtn").onclick = send;
+  el("sendBtn").onclick = function () {
+    if (busy) {
+      stoppedByUser = true;
+      if (controller) controller.abort();
+    } else {
+      send();
+    }
+  };
   input.addEventListener("keydown", function (e) {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); }
+    if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); send(); }
+  });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && !busy) parent.postMessage({ type: "sf-ai-close" }, ORIGIN);
   });
 
   el("selclear").onclick = function () {

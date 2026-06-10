@@ -104,7 +104,7 @@ LLM APIs are stateless and the browser calls the provider directly, so all conte
 - **Revoke access** button — clears key + disables assistant; note shown that chats are kept
 - All values stored in browser storage only; the page makes no server calls for key data
 
-Storage note: the key is saved in `sessionStorage` under a namespaced key, so enabling from Settings carries into `/p/:slug` visits in the same tab session. New tab/session ⇒ re-enter key (consistent with "key stays within the session").
+Storage note *(revised 2026-06-10)*: the key is saved in `localStorage` under namespaced keys — it works across tabs and survives browser restarts, removed only via Revoke. (Originally `sessionStorage`, but per-tab scoping forced re-entering the key on every new tab; user opted for localStorage. The key still never leaves the browser.)
 
 ## Files to Add / Change
 
