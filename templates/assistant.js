@@ -182,11 +182,27 @@ function assistantPanelHtml(slug) {
   #msgs { flex:1; overflow-y:auto; padding: .9rem .75rem; display:flex;
     flex-direction:column; gap:.65rem; }
   .msg { max-width:92%; padding:.55rem .7rem; border-radius:10px; font-size:.83rem;
-    white-space:pre-wrap; word-wrap:break-word; }
+    word-wrap:break-word; overflow-wrap:anywhere; }
   .msg.user { align-self:flex-end; background:rgba(251,146,60,.14);
-    border:1px solid rgba(251,146,60,.25); }
+    border:1px solid rgba(251,146,60,.25); white-space:pre-wrap; }
   .msg.assistant { align-self:flex-start; background:var(--panel);
     border:1px solid var(--border); }
+  /* Markdown rendered inside assistant bubbles — keep it tight in a narrow panel */
+  .msg.assistant p { margin:0 0 .45rem; }
+  .msg.assistant p:last-child { margin-bottom:0; }
+  .msg.assistant ul, .msg.assistant ol { margin:.25rem 0 .45rem; padding-left:1.2rem; }
+  .msg.assistant li { margin:.1rem 0; }
+  .msg.assistant h1, .msg.assistant h2, .msg.assistant h3, .msg.assistant h4 {
+    margin:.4rem 0 .25rem; font-size:.9rem; font-weight:700; color:var(--text); }
+  .msg.assistant strong { color:#fed7aa; }
+  .msg.assistant em { color:var(--text); }
+  .msg.assistant a { color:var(--accent); text-decoration:underline; }
+  .msg.assistant code { background:rgba(255,255,255,.07); border:1px solid var(--border);
+    border-radius:4px; padding:0 .25rem; font:.78rem ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .msg.assistant pre { background:#0a0807; border:1px solid var(--border);
+    border-radius:6px; padding:.5rem .6rem; margin:.35rem 0; overflow-x:auto; }
+  .msg.assistant pre code { background:none; border:none; padding:0;
+    font-size:.75rem; white-space:pre; color:#fde68a; }
   .msg .sel { display:block; border-left:3px solid var(--accent); padding:.15rem .5rem;
     margin-bottom:.4rem; color:var(--muted); font-size:.74rem; font-style:italic; }
   .msg.assistant.failed { border-color:rgba(239,68,68,.45); color:#fca5a5; }
@@ -289,6 +305,86 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     custom: "",
   };
 
+  // ── Minimal, safe markdown renderer ─────────────────────────────────────
+  // The chat panel renders only a restricted markdown subset: fenced + inline
+  // code, bold, italic, http(s) links, ordered/unordered lists, and h1-h4.
+  // All other input is treated as plain prose and HTML-escaped. Incomplete
+  // tokens during streaming (e.g. an unclosed \`\`\`) just fall through as
+  // escaped text — they fix themselves on the next chunk.
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function renderMarkdown(text) {
+    if (!text) return "";
+    var blocks = [];
+    // 1) Pull out fenced code blocks first so inline rules don't touch them.
+    text = text.replace(/\`\`\`([^\\n\`]*)\\n?([\\s\\S]*?)\`\`\`/g,
+      function (_, _lang, code) {
+        blocks.push(code.replace(/\\n$/, ""));
+        return "\\u0000CB" + (blocks.length - 1) + "\\u0000";
+      });
+    // 2) Escape everything else exactly once.
+    text = escapeHtml(text);
+    // 3) Inline rules. Order matters: code before emphasis; bold before italic.
+    text = text.replace(/\`([^\`\\n]+)\`/g, "<code>$1</code>");
+    text = text.replace(/\\*\\*([^\\n*]+)\\*\\*/g, "<strong>$1</strong>");
+    text = text.replace(/__([^\\n_]+)__/g, "<strong>$1</strong>");
+    text = text.replace(/(^|[\\s(])\\*([^\\s*][^\\n*]*?)\\*(?=[\\s).,!?:;]|$)/g, "$1<em>$2</em>");
+    text = text.replace(/(^|[\\s(])_([^\\s_][^\\n_]*?)_(?=[\\s).,!?:;]|$)/g, "$1<em>$2</em>");
+    // http(s) links only — anything else (javascript:, data:) stays as text.
+    text = text.replace(/\\[([^\\]\\n]+)\\]\\((https?:\\/\\/[^\\s)]+)\\)/g,
+      '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+    // 4) Block pass: headers, lists, paragraphs, code-block placeholders.
+    var lines = text.split("\\n");
+    var out = [];
+    var inList = null;
+    var para = [];
+    function flushPara() {
+      if (para.length) { out.push("<p>" + para.join("<br/>") + "</p>"); para = []; }
+    }
+    function flushList() {
+      if (inList) { out.push("</" + inList + ">"); inList = null; }
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].trim();
+      var cb = t.match(/^\\u0000CB(\\d+)\\u0000$/);
+      if (cb) {
+        flushPara(); flushList();
+        out.push("<pre><code>" + escapeHtml(blocks[+cb[1]]) + "</code></pre>");
+        continue;
+      }
+      if (!t) { flushPara(); flushList(); continue; }
+      var h = t.match(/^(#{1,4})\\s+(.+)$/);
+      if (h) {
+        flushPara(); flushList();
+        var lvl = h[1].length;
+        out.push("<h" + lvl + ">" + h[2] + "</h" + lvl + ">");
+        continue;
+      }
+      var ul = t.match(/^[-*+]\\s+(.+)$/);
+      if (ul) {
+        flushPara();
+        if (inList !== "ul") { flushList(); out.push("<ul>"); inList = "ul"; }
+        out.push("<li>" + ul[1] + "</li>");
+        continue;
+      }
+      var ol = t.match(/^\\d+\\.\\s+(.+)$/);
+      if (ol) {
+        flushPara();
+        if (inList !== "ol") { flushList(); out.push("<ol>"); inList = "ol"; }
+        out.push("<li>" + ol[1] + "</li>");
+        continue;
+      }
+      flushList();
+      para.push(t);
+    }
+    flushPara(); flushList();
+    return out.join("");
+  }
+
   var pageCtx = { title: "", url: "", text: "" };
   var chatId = null;          // server chat id (created lazily on first send)
   var history = [];           // [{role, content, selection?}] — full, for UI + persistence
@@ -358,7 +454,11 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
       div.appendChild(q);
     }
     var body = document.createElement("span");
-    body.textContent = content;
+    if (role === "assistant" && content) {
+      body.innerHTML = renderMarkdown(content);
+    } else {
+      body.textContent = content;
+    }
     div.appendChild(body);
     msgs.appendChild(div);
     msgs.scrollTop = msgs.scrollHeight;
@@ -437,6 +537,16 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
   function systemPrompt() {
     return "You are an AI assistant embedded in a published web page on ShipFast. " +
       "Help the user understand and work with this page. Be concise.\\n\\n" +
+      "Formatting rules (the chat panel is narrow and renders only a limited " +
+      "subset of markdown):\\n" +
+      "- Default to plain prose. Do not use markdown unless it clearly helps.\\n" +
+      "- Allowed when useful: **bold** for key terms, \`inline code\`, fenced " +
+      "code blocks for snippets, short bulleted lists (- item) for 3+ parallel " +
+      "items, [text](https://url) for links.\\n" +
+      "- Avoid: headings (#, ##), tables, blockquotes, nested lists, horizontal " +
+      "rules, and HTML.\\n" +
+      "- Keep responses tight: a few sentences, or a short list. No preamble, " +
+      "no recap.\\n\\n" +
       "Page title: " + pageCtx.title + "\\nPage URL: " + pageCtx.url +
       "\\n\\nPage content:\\n" + pageCtx.text;
   }
@@ -624,7 +734,7 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     var acc = "";
 
     function finalize(suffix) {
-      assistantBody.textContent = acc + (suffix || "");
+      assistantBody.innerHTML = renderMarkdown(acc + (suffix || ""));
       var assistantMsg = { role: "assistant", content: acc + (suffix || "") };
       history.push(assistantMsg);
       return persist([userMsg, assistantMsg]).catch(function (e) {
@@ -635,7 +745,10 @@ or select text on the page and click &ldquo;Ask AI about this&rdquo;.</div></div
     callProvider(function (chunk) {
       var stick = nearBottom();
       acc += chunk;
-      assistantBody.textContent = acc; // replaces the indicator on first chunk
+      // Re-render the full accumulated text each chunk. The renderer tolerates
+      // incomplete markdown (e.g. an unclosed code fence) by leaving the raw
+      // characters in place until the closing token arrives.
+      assistantBody.innerHTML = renderMarkdown(acc);
       if (stick) msgs.scrollTop = msgs.scrollHeight;
     }, controller.signal).then(function () {
       if (!acc) acc = "(empty response)";
