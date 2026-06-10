@@ -21,6 +21,7 @@
     "marked": "^18.0.3",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
+    "pg": "^8.21.0",
     "redis": "^5.12.1",
     "vercel": "^54.4.1"
   },

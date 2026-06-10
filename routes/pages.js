@@ -1,4 +1,5 @@
 const express = require("express");
+const config = require("../config");
 const s3Service = require("../services/s3");
 const pageService = require("../services/page");
 const authMiddleware = require("../middleware/auth");
@@ -74,11 +75,20 @@ router.get("/p/:slug(*)", async (req, res) => {
     </span>
   </a>`;
 
+  // AI assistant loader — authenticated users only, and only when the
+  // feature is configured. The user's LLM key never reaches this server.
+  let assistantTag = "";
+  if (config.ASSISTANT_ENABLED && authMiddleware.getCurrentUser(req)) {
+    const slugAttr = encodeURIComponent(req.params.slug).replace(/%2F/gi, "/");
+    assistantTag = `<script src="/assistant.js" data-sf-assistant data-slug="${slugAttr}" defer></script>`;
+  }
+
+  const inject = badge + assistantTag;
   const lastBodyIdx = html.lastIndexOf("</body>");
   const finalHtml =
     lastBodyIdx === -1
-      ? html + badge
-      : html.slice(0, lastBodyIdx) + badge + html.slice(lastBodyIdx);
+      ? html + inject
+      : html.slice(0, lastBodyIdx) + inject + html.slice(lastBodyIdx);
 
   res.setHeader("Content-Type", "text/html; charset=utf-8");
   res.send(finalHtml);

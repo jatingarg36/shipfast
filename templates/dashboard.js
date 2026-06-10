@@ -548,6 +548,46 @@ kbd{
 .folder-count {
   font-size: .7rem; color: var(--muted); margin-top: .15rem;
 }
+/* ── Profile dropdown ── */
+.profile-dd { position: relative; }
+.profile-dd summary { list-style: none; cursor: pointer; display: flex; align-items: center; }
+.profile-dd summary::-webkit-details-marker { display: none; }
+.profile-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.15); object-fit: cover; display: block;
+}
+.profile-initial {
+  width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
+  background: linear-gradient(135deg,#f97316,#ef4444); color: #fff;
+  font-size: .8rem; font-weight: 800;
+}
+.profile-menu {
+  position: absolute; right: 0; top: calc(100% + 8px); min-width: 200px; z-index: 500;
+  background: #171412; border: 1px solid rgba(255,255,255,.1); border-radius: 10px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.5); padding: .4rem;
+}
+.profile-menu .pm-user {
+  padding: .5rem .65rem .6rem; border-bottom: 1px solid rgba(255,255,255,.07);
+  margin-bottom: .3rem;
+}
+.profile-menu .pm-name {
+  font-size: .8rem; font-weight: 700; color: var(--text);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-menu .pm-email {
+  font-size: .68rem; color: var(--muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-menu a, .profile-menu button {
+  display: flex; align-items: center; gap: .5rem; width: 100%;
+  background: none; border: none; cursor: pointer; text-decoration: none;
+  color: var(--muted); font: 500 .78rem Inter,system-ui,sans-serif;
+  padding: .45rem .65rem; border-radius: 7px; text-align: left;
+}
+.profile-menu a:hover, .profile-menu button:hover {
+  background: rgba(251,146,60,.08); color: var(--accent);
+}
+.profile-menu form { margin: 0; }
 </style>
 </head>
 <body>
@@ -565,15 +605,35 @@ kbd{
       </div>
       ${
         isLoggedIn
-          ? (user.avatar ? '<img src="' + user.avatar + '" style="width:28px;height:28px;border-radius:50%;border:1px solid rgba(255,255,255,.1)" alt="" referrerpolicy="no-referrer"/>' : '') +
-            '<span style="font-size:.75rem;color:var(--muted);font-weight:500;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + user.displayName + (user.role === "admin" ? ' <span style="color:var(--accent);font-size:.6rem;font-weight:700">ADMIN</span>' : '') + '</span>' +
-            '<button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Ship</button>' +
-            '<form method="POST" action="/api/logout" style="margin:0"><button type="submit" class="btn btn-ghost" style="font-size:.72rem;padding:.4rem .8rem"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button></form>'
+          ? '<button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Ship</button>' +
+            '<details class="profile-dd" id="profileDd">' +
+              '<summary title="' + user.displayName + '">' +
+                (user.avatar
+                  ? '<img class="profile-avatar" src="' + user.avatar + '" alt="" referrerpolicy="no-referrer"/>'
+                  : '<span class="profile-initial">' + (user.displayName || "U").charAt(0).toUpperCase() + '</span>') +
+              '</summary>' +
+              '<div class="profile-menu">' +
+                '<div class="pm-user">' +
+                  '<div class="pm-name">' + user.displayName + (user.role === "admin" ? ' <span style="color:var(--accent);font-size:.6rem;font-weight:700">ADMIN</span>' : '') + '</div>' +
+                  (user.email ? '<div class="pm-email">' + user.email + '</div>' : '') +
+                '</div>' +
+                '<a href="/settings"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33h.09a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51h.09a1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82v.09a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>Settings</a>' +
+                '<form method="POST" action="/api/logout"><button type="submit"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>Logout</button></form>' +
+              '</div>' +
+            '</details>'
           : '<a href="/login" class="btn btn-ghost" style="font-size:.72rem;padding:.4rem .8rem"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Login</a>'
       }
     </div>
   </div>
 </nav>
+
+<script>
+  // Close the profile dropdown when clicking elsewhere
+  document.addEventListener("click", function (e) {
+    var dd = document.getElementById("profileDd");
+    if (dd && dd.open && !dd.contains(e.target)) dd.open = false;
+  });
+</script>
 
 <div class="wrap">
 
