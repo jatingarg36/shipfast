@@ -360,13 +360,30 @@ nav{
   padding:0;
 }
 .card-v2:hover{transform:translateY(-4px);border-color:var(--border-hover);box-shadow:0 18px 44px rgba(0,0,0,.42);background:var(--surface)}
-.card-v2 .card-thumb-v2{height:168px;background:#0e0d0c;border:none;border-bottom:1px solid var(--border);margin:0;position:relative;overflow:hidden;transition:filter .25s,background .25s}
-.card-v2 .card-thumb-v2 iframe{position:absolute;top:0;left:0;width:250%;height:250%;border:none;transform:scale(.4);transform-origin:top left;pointer-events:none;filter:saturate(.7) opacity(.92);transition:filter .3s ease}
+.card-v2 .card-thumb-v2{
+  height:210px;background:#0e0d0c;border:none;border-bottom:1px solid var(--border);
+  margin:0;position:relative;overflow:hidden;transition:background .25s;
+}
+.card-v2 .card-thumb-v2 iframe{
+  position:absolute;top:0;left:0;width:200%;height:200%;border:none;
+  transform:scale(.5);transform-origin:top left;pointer-events:none;
+  filter:saturate(.9);transition:filter .3s ease;
+}
 .card-v2:hover .card-thumb-v2 iframe{filter:none}
+.card-v2 .card-thumb-v2::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(to bottom, transparent 60%, color-mix(in srgb, var(--surface) 55%, transparent));
+  transition:opacity .3s ease;z-index:1;
+}
+.card-v2:hover .card-thumb-v2::after{opacity:0}
 :root[data-theme='light'] .card-v2 .card-thumb-v2{background:#fbf8f2}
 .card-v2 .card-body-v2{padding:1.05rem 1.15rem .25rem;flex:1;display:flex;flex-direction:column;gap:.45rem}
 .card-v2 .card-title-v2{font-size:1rem;font-weight:600;letter-spacing:-.01em;line-height:1.25;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.card-v2 .card-slug-v2{font-family:var(--mono);font-size:.72rem;color:var(--accent2);opacity:.92;display:inline-flex;align-items:center;gap:.5rem}
+.card-v2 .card-slug-v2{
+  font-family:var(--mono);font-size:.72rem;color:var(--accent2);opacity:.92;
+  display:flex;align-items:center;gap:.5rem;min-width:0;
+}
+.card-v2 .card-slug-v2 .slug-text{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .card-v2 .card-desc-v2{font-size:.8rem;color:var(--muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .card-v2 .card-foot-v2{
   display:flex;align-items:center;gap:1rem;padding:.85rem 1.15rem;
@@ -380,7 +397,12 @@ nav{
 .card-v2 .card-foot-v2 .act .btn-link svg{width:11px;height:11px}
 .card-v2 .card-foot-v2 .act .btn-link:hover{color:var(--accent2)}
 .card-v2 .card-foot-v2 .act .btn-link.danger:hover{color:var(--danger)}
-.card-v2 .lock{font-size:.55rem;border:1px solid rgba(249,115,22,.4);color:var(--accent2);border-radius:5px;padding:.05rem .4rem;letter-spacing:.04em;text-transform:uppercase}
+.card-v2 .lock{
+  flex:none;font-size:.55rem;border:1px solid rgba(249,115,22,.4);
+  color:var(--accent2);border-radius:5px;padding:.05rem .4rem;
+  letter-spacing:.04em;text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:.2rem;white-space:nowrap;
+}
 
 /* ── Empty state ── */
 .empty-state{
@@ -1376,7 +1398,7 @@ function renderPageCardHtml(p) {
     '<div class="card-thumb-v2"><iframe src="/p/' + p.slug + '" loading="lazy" tabindex="-1"></iframe></div>' +
     '<div class="card-body-v2">' +
       '<div class="card-title-v2">' + esc(p.title) + '</div>' +
-      '<div class="card-slug-v2">/p/' + esc(p.slug) + ' ' + lock + '</div>' +
+      '<div class="card-slug-v2"><span class="slug-text">/p/' + esc(p.slug) + '</span>' + lock + '</div>' +
       (desc ? '<div class="card-desc-v2">' + esc(desc) + '</div>' : '') +
     '</div>' +
     '<div class="card-foot-v2">' +
