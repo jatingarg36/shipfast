@@ -26,6 +26,7 @@ function dashboardHtml(user) {
 <meta property="og:description" content="Ship pages instantly — paste code, get a URL"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script>(function(){try{var s=localStorage.getItem('shipfast-theme');if(s==='light'||s==='dark')document.documentElement.setAttribute('data-theme',s);}catch(e){}})();</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 
@@ -49,9 +50,26 @@ function dashboardHtml(user) {
   --mono:'JetBrains Mono',monospace;
   --sans:'Inter',system-ui,-apple-system,sans-serif;
   --radius:12px;
+  --text-faint:var(--muted2);
+  --border-strong:var(--border-hover);
 }
 
-html{scroll-behavior:smooth}
+:root[data-theme='light']{
+  --bg:#f5f2ec;
+  --surface:#ffffff;
+  --surface2:#fbf8f2;
+  --surface3:#ffffff;
+  --border:rgba(20,15,10,.11);
+  --border-hover:rgba(20,15,10,.20);
+  --text:#1a1613;
+  --text2:#3a342e;
+  --muted:#6e665d;
+  --muted2:#a39a8f;
+  --text-faint:#a39a8f;
+  --border-strong:rgba(20,15,10,.20);
+}
+
+html{scroll-behavior:smooth;transition:background .3s ease,color .3s ease}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;-webkit-font-smoothing:antialiased}
 body::before{
   content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
@@ -59,11 +77,17 @@ body::before{
     radial-gradient(ellipse 50% 40% at 75% 5%,rgba(249,115,22,.06),transparent 70%),
     radial-gradient(ellipse 40% 50% at 15% 85%,rgba(239,68,68,.04),transparent 70%);
 }
+:root[data-theme='light'] body::before{
+  background:
+    radial-gradient(ellipse 50% 40% at 75% 5%,rgba(249,115,22,.04),transparent 70%),
+    radial-gradient(ellipse 40% 50% at 15% 85%,rgba(239,68,68,.025),transparent 70%);
+}
 
 /* ── Navbar ── */
 nav{
   position:sticky;top:0;z-index:50;
-  background:rgba(12,10,9,.85);backdrop-filter:blur(20px) saturate(1.4);
+  background:color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter:blur(20px) saturate(1.4);
   border-bottom:1px solid var(--border);
 }
 .nav-inner{
@@ -79,6 +103,27 @@ nav{
 }
 .nav-title{font-size:1rem;font-weight:700;letter-spacing:-.02em}
 .nav-title span{color:var(--accent2)}
+
+/* ── Nav links + theme toggle ── */
+.nav-left{display:flex;align-items:center;gap:1.85rem}
+.nav-links{display:flex;align-items:center;gap:1.4rem}
+.nav-link{
+  font-size:.82rem;font-weight:500;color:var(--muted);text-decoration:none;
+  position:relative;padding:.25rem 0;transition:color .15s;
+}
+.nav-link:hover,.nav-link.active{color:var(--text)}
+.nav-link.active::after{
+  content:'';position:absolute;left:0;right:0;bottom:-3px;height:2px;border-radius:2px;
+  background:linear-gradient(135deg,var(--accent),var(--warm));
+}
+@media(max-width:780px){.nav-links{display:none}}
+.icon-btn{
+  width:34px;height:34px;border:1px solid var(--border);background:var(--surface2);
+  border-radius:8px;color:var(--muted);display:grid;place-items:center;cursor:pointer;
+  transition:all .18s ease;
+}
+.icon-btn:hover{color:var(--text);border-color:var(--border-hover);transform:translateY(-1px)}
+.icon-btn svg{width:15px;height:15px}
 
 /* ── Buttons ── */
 .btn{
@@ -106,8 +151,22 @@ nav{
 .wrap{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:0 2rem 6rem}
 
 /* ── Hero ── */
-.hero{padding:2.5rem 0 2rem;max-width:700px;margin:0 auto;text-align:center}
-.hero h2{font-size:3rem;font-weight:900;letter-spacing:-.05em;line-height:1.1}
+.hero{padding:3.5rem 0 3rem;position:relative}
+.hero::before{
+  content:'';position:absolute;top:-40px;left:50%;transform:translateX(-50%);
+  width:720px;height:480px;
+  background:radial-gradient(ellipse at center, var(--accent-glow), transparent 68%);
+  pointer-events:none;z-index:0;
+}
+.hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:3.5rem;align-items:center;position:relative;z-index:1}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:.55rem;
+  font-size:.7rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);background:var(--surface);border:1px solid var(--border);
+  padding:.4rem .8rem;border-radius:999px;margin-bottom:1.5rem;
+}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px rgba(34,197,94,.18)}
+.hero h2{font-size:clamp(2.1rem,5.2vw,3.6rem);font-weight:800;letter-spacing:-.035em;line-height:1.05;margin:0 0 1.1rem;text-wrap:balance}
 .hero .grad{
   background:linear-gradient(135deg,var(--accent),var(--warm),var(--accent2));
   background-size:200% 200%;
@@ -115,10 +174,85 @@ nav{
   animation:shimmer 4s ease infinite;
 }
 @keyframes shimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
-.hero p{color:var(--muted);font-size:.95rem;margin-top:.75rem;line-height:1.6;max-width:420px;margin-left:auto;margin-right:auto}
-.hero-cta{margin-top:1.25rem;display:flex;gap:.75rem;justify-content:center;align-items:center}
-.hero-cta .btn{padding:.65rem 1.6rem;font-size:.88rem;border-radius:10px}
-.hero-cta .shortcut-hint{font-size:.7rem;color:var(--muted2);font-family:var(--mono)}
+.hero p{font-size:1rem;color:var(--muted);max-width:460px;margin:0 0 1.85rem;line-height:1.6;text-wrap:pretty}
+.hero-cta{display:flex;gap:1.1rem;align-items:center;flex-wrap:wrap;margin:0}
+.hero-cta .btn-primary{padding:.85rem 1.5rem;font-size:.92rem;border-radius:11px}
+.btn-browse{
+  display:inline-flex;align-items:center;gap:.5rem;
+  color:var(--muted);text-decoration:none;font-size:.92rem;font-weight:500;
+  padding:.85rem .25rem;transition:color .15s,gap .15s;
+}
+.btn-browse:hover{color:var(--accent2);gap:.7rem}
+.btn-browse svg{width:14px;height:14px}
+
+/* Inline demo editor — real publish */
+.hero-demo{
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.6);overflow:hidden;position:relative;
+  display:flex;flex-direction:column;min-height:300px;
+}
+.hero-demo-bar{display:flex;align-items:center;gap:.5rem;padding:.85rem 1rem;border-bottom:1px solid var(--border);background:var(--surface2)}
+.dots{display:flex;gap:.35rem}
+.dots i{width:11px;height:11px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:#ff5f57}
+.dots i:nth-child(2){background:#febc2e}
+.dots i:nth-child(3){background:#28c840}
+.hero-demo-file{
+  font-family:var(--mono);font-size:.72rem;color:var(--muted);
+  margin-left:.25rem;background:transparent;border:1px solid transparent;
+  border-radius:5px;padding:.15rem .4rem;outline:none;
+  width:auto;min-width:6.5rem;max-width:16rem;
+  transition:border-color .15s,background .15s,color .15s;
+}
+.hero-demo-file:hover{border-color:var(--border);background:var(--surface3);cursor:text}
+.hero-demo-file:focus{border-color:var(--accent);background:var(--surface3);color:var(--text);cursor:text}
+.hero-demo-tag{margin-left:auto;font-family:var(--mono);font-size:.65rem;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em}
+.hero-demo-code{
+  flex:1;width:100%;min-height:190px;
+  font-family:var(--mono);font-size:.78rem;line-height:1.75;
+  padding:1.1rem 1.2rem;background:#131110;color:#d8d2c8;
+  border:none;outline:none;resize:none;
+}
+.hero-demo-code::placeholder{color:#4a423a}
+:root[data-theme='light'] .hero-demo-code{background:#fbf8f2;color:#1a1613}
+:root[data-theme='light'] .hero-demo-code::placeholder{color:#a39a8f}
+.hero-demo-foot{display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-top:1px solid var(--border);background:var(--surface2)}
+.hero-ship-btn{
+  display:inline-flex;align-items:center;gap:.4rem;
+  background:linear-gradient(135deg,var(--accent),var(--warm));color:#fff;border:none;
+  border-radius:8px;padding:.55rem .9rem;
+  font-family:var(--mono);font-size:.72rem;font-weight:600;cursor:pointer;
+  transition:transform .15s,filter .15s;
+}
+.hero-ship-btn:hover:not(:disabled){transform:translateY(-1px);filter:brightness(1.05)}
+.hero-ship-btn:disabled{opacity:.5;cursor:default}
+.hero-ship-btn svg{width:13px;height:13px}
+.hero-demo-status{font-family:var(--mono);font-size:.7rem;color:var(--text-faint);display:flex;align-items:center;gap:.4rem}
+.hero-demo-spinner{width:11px;height:11px;border:2px solid var(--border-hover);border-top-color:var(--accent);border-radius:50%;animation:spin .5s linear infinite}
+.hero-url-result{
+  position:absolute;left:1rem;right:1rem;bottom:3.6rem;
+  display:flex;align-items:center;gap:.6rem;
+  background:var(--surface3);border:1px solid var(--accent);
+  border-radius:10px;padding:.7rem .85rem;
+  box-shadow:0 16px 36px -14px rgba(249,115,22,.45);
+  opacity:0;transform:translateY(14px) scale(.98);pointer-events:none;
+  transition:opacity .35s cubic-bezier(.2,.8,.2,1),transform .35s cubic-bezier(.2,.8,.2,1);
+}
+.hero-url-result.show{opacity:1;transform:none;pointer-events:auto}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--success);box-shadow:0 0 0 3px rgba(34,197,94,.16);flex:none}
+.hero-url-text{font-family:var(--mono);font-size:.74rem;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.hero-url-text b{color:var(--accent2)}
+.hero-url-copy{
+  border:1px solid var(--border-hover);background:transparent;color:var(--muted);
+  border-radius:6px;padding:.35rem .6rem;font-family:var(--mono);font-size:.65rem;cursor:pointer;
+  display:inline-flex;align-items:center;gap:.35rem;transition:all .15s;flex:none;
+}
+.hero-url-copy:hover{color:var(--text);border-color:var(--accent)}
+.hero-url-copy svg{width:11px;height:11px}
+@media(max-width:940px){
+  .hero-grid{grid-template-columns:1fr;gap:2.5rem}
+  .hero-demo{max-width:560px;width:100%}
+}
 .nav-stats{display:flex;align-items:center;gap:.65rem;margin-right:.85rem;padding:.3rem .7rem;background:var(--surface2);border:1px solid var(--border);border-radius:999px}
 .nav-stat{display:flex;align-items:baseline;gap:.3rem;font-size:.72rem;color:var(--muted);line-height:1}
 .nav-stat+.nav-stat{padding-left:.65rem;border-left:1px solid var(--border)}
@@ -180,6 +314,73 @@ nav{
 .card-actions{display:flex;gap:.3rem;flex-shrink:0}
 .card-actions .btn{opacity:0;transition:opacity .2s}
 .card:hover .card-actions .btn{opacity:1}
+
+/* ── Section head (new) ── */
+.section-head{display:flex;align-items:flex-end;justify-content:space-between;gap:1.5rem;margin:1.5rem 0 1.25rem;flex-wrap:wrap}
+.section-head-l{flex:1;min-width:280px}
+.section-eyebrow{font-family:var(--mono);font-size:.7rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--accent2);margin-bottom:.65rem}
+.section-h2{font-size:clamp(1.45rem,2.6vw,1.85rem);font-weight:700;letter-spacing:-.025em;line-height:1.1;color:var(--text);display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin:0}
+.section-h2 .cnt{font-family:var(--mono);font-size:.75rem;font-weight:500;color:var(--text-faint);border:1px solid var(--border);border-radius:999px;padding:.15rem .65rem}
+.section-sub{font-size:.85rem;color:var(--text-faint);margin-top:.55rem}
+.section-head-r{display:flex;align-items:center;gap:.55rem}
+.section-head .search-wrap{margin:0}
+.section-head .search-input{padding-left:2rem;width:240px}
+.section-head .sort-select{padding:.5rem .65rem}
+
+/* ── Folder pill rail ── */
+.folders{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:0 0 1.5rem}
+.folder{
+  display:inline-flex;align-items:center;gap:.5rem;
+  border:1px solid var(--border);background:var(--surface);
+  border-radius:11px;padding:.45rem .8rem .45rem .65rem;
+  font-family:var(--sans);font-size:.78rem;font-weight:500;color:var(--muted);
+  cursor:pointer;transition:all .16s ease;
+}
+.folder:hover{color:var(--text);border-color:var(--border-hover);transform:translateY(-1px)}
+.folder svg{width:14px;height:14px;flex:none;opacity:.85}
+.folder .fc{font-family:var(--mono);font-size:.65rem;color:var(--text-faint);border:1px solid var(--border);border-radius:999px;padding:.05rem .4rem;transition:all .16s}
+.folder[aria-pressed='true']{
+  color:var(--text);border-color:transparent;
+  background:color-mix(in srgb,var(--accent) 14%,var(--surface));
+  box-shadow:inset 0 0 0 1px rgba(249,115,22,.5);
+}
+.folder[aria-pressed='true'] svg{color:var(--accent2);opacity:1}
+.folder[aria-pressed='true'] .fc{color:var(--accent2);border-color:rgba(249,115,22,.4)}
+
+/* ── Card grid (new) ── */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem}
+.grid-empty{padding:3rem 0;text-align:center;font-family:var(--mono);font-size:.8rem;color:var(--text-faint)}
+
+/* ── Card v2 (edge-to-edge thumb, footer outside body) ── */
+.card-v2{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:14px;overflow:hidden;cursor:pointer;text-decoration:none;color:inherit;
+  display:flex;flex-direction:column;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),border-color .22s,box-shadow .22s,background .22s;
+  padding:0;
+}
+.card-v2:hover{transform:translateY(-4px);border-color:var(--border-hover);box-shadow:0 18px 44px rgba(0,0,0,.42);background:var(--surface)}
+.card-v2 .card-thumb-v2{height:168px;background:#0e0d0c;border:none;border-bottom:1px solid var(--border);margin:0;position:relative;overflow:hidden;transition:filter .25s,background .25s}
+.card-v2 .card-thumb-v2 iframe{position:absolute;top:0;left:0;width:250%;height:250%;border:none;transform:scale(.4);transform-origin:top left;pointer-events:none;filter:saturate(.7) opacity(.92);transition:filter .3s ease}
+.card-v2:hover .card-thumb-v2 iframe{filter:none}
+:root[data-theme='light'] .card-v2 .card-thumb-v2{background:#fbf8f2}
+.card-v2 .card-body-v2{padding:1.05rem 1.15rem .25rem;flex:1;display:flex;flex-direction:column;gap:.45rem}
+.card-v2 .card-title-v2{font-size:1rem;font-weight:600;letter-spacing:-.01em;line-height:1.25;color:var(--text);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-v2 .card-slug-v2{font-family:var(--mono);font-size:.72rem;color:var(--accent2);opacity:.92;display:inline-flex;align-items:center;gap:.5rem}
+.card-v2 .card-desc-v2{font-size:.8rem;color:var(--muted);line-height:1.55;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-v2 .card-foot-v2{
+  display:flex;align-items:center;gap:1rem;padding:.85rem 1.15rem;
+  margin-top:.85rem;border-top:1px solid var(--border);
+  font-family:var(--mono);font-size:.66rem;color:var(--text-faint);
+}
+.card-v2 .card-foot-v2 .meta{display:inline-flex;align-items:center;gap:.3rem}
+.card-v2 .card-foot-v2 .meta svg{width:11px;height:11px}
+.card-v2 .card-foot-v2 .act{margin-left:auto;display:inline-flex;align-items:center;gap:.7rem;color:var(--muted);transition:color .15s}
+.card-v2 .card-foot-v2 .act .btn-link{background:none;border:none;color:inherit;font-family:var(--mono);font-size:.66rem;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:.25rem;transition:color .15s}
+.card-v2 .card-foot-v2 .act .btn-link svg{width:11px;height:11px}
+.card-v2 .card-foot-v2 .act .btn-link:hover{color:var(--accent2)}
+.card-v2 .card-foot-v2 .act .btn-link.danger:hover{color:var(--danger)}
+.card-v2 .lock{font-size:.55rem;border:1px solid rgba(249,115,22,.4);color:var(--accent2);border-radius:5px;padding:.05rem .4rem;letter-spacing:.04em;text-transform:uppercase}
 
 /* ── Empty state ── */
 .empty-state{
@@ -402,27 +603,31 @@ kbd{
 }
 .btn-edit:hover{color:var(--accent2);border-color:rgba(249,115,22,.2);background:rgba(249,115,22,.05)}
 
-/* ── Features strip ── */
-.features{margin-top:3rem;padding:2.5rem 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}
-.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:2rem}
-@media(max-width:768px){.features-grid{grid-template-columns:1fr;gap:1.5rem}}
-.feature{text-align:center}
-.feature-icon{
-  width:44px;height:44px;border-radius:12px;margin:0 auto .85rem;
-  background:var(--surface);border:1px solid var(--border);
-  display:grid;place-items:center;
-  transition:all .25s;
-}
-.feature:hover .feature-icon{border-color:var(--border-hover);box-shadow:0 0 20px var(--accent-glow)}
-.feature-icon svg{width:20px;height:20px;color:var(--accent2)}
-.feature h4{font-size:.85rem;font-weight:700;letter-spacing:-.01em;margin-bottom:.3rem}
-.feature p{font-size:.78rem;color:var(--muted);line-height:1.55;max-width:220px;margin:0 auto}
+/* ── Steps strip (How it works) ── */
+.steps-eyebrow{font-family:var(--mono);font-size:.7rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--text-faint);margin:5rem 0 1.1rem}
+.features{margin:0 0 1rem;padding:0;border:1px solid var(--border);border-radius:14px;overflow:hidden;background:var(--border)}
+.features-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:transparent}
+.feature{text-align:left;background:var(--surface);padding:1.5rem 1.55rem}
+.feature .step-n{font-family:var(--mono);font-size:.7rem;color:var(--accent2);margin-bottom:.7rem;letter-spacing:.04em}
+.feature h4{font-size:1rem;font-weight:600;letter-spacing:-.01em;margin:0 0 .35rem;display:flex;align-items:center;gap:.55rem}
+.feature h4 svg{width:15px;height:15px;color:var(--muted);flex:none}
+.feature p{font-size:.82rem;color:var(--muted);line-height:1.55;max-width:none}
+.feature-icon{display:none}
+@media(max-width:768px){.features-grid{grid-template-columns:1fr;gap:1px}}
 
 /* ── Footer ── */
 .footer{
   text-align:center;padding:2.5rem 0 1.5rem;color:var(--muted2);font-size:.7rem;
   letter-spacing:.02em;border-top:1px solid var(--border);margin-top:3rem;
 }
+.footer-v2{
+  margin-top:5rem;padding:2rem 0 3rem;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:1.25rem;flex-wrap:wrap;
+}
+.footer-v2 .footer-l{display:flex;align-items:center;gap:.7rem;color:var(--text-faint);font-size:.82rem}
+.footer-links{display:flex;gap:1.4rem;font-family:var(--mono);font-size:.75rem}
+.footer-links a{color:var(--muted);text-decoration:none;transition:color .15s}
+.footer-links a:hover{color:var(--accent2)}
 
 /* ── Toast ── */
 .toast{
@@ -440,10 +645,9 @@ kbd{
 /* ── Responsive ── */
 @media(max-width:640px){
   .nav-inner,.wrap{padding-left:1rem;padding-right:1rem}
-  .hero{padding:1.75rem 0 1.5rem}
-  .hero h2{font-size:2rem}
-  .hero p{font-size:.85rem}
-  .hero-cta .btn{padding:.55rem 1.2rem;font-size:.82rem}
+  .hero{padding:2rem 0 1.5rem}
+  .hero p{font-size:.9rem}
+  .hero-cta .btn-primary{padding:.7rem 1.25rem;font-size:.85rem}
   .card-grid{grid-template-columns:1fr}
   .nav-stats{display:none}
   .features-grid{gap:1.25rem}
@@ -597,15 +801,22 @@ kbd{
 
 <nav>
   <div class="nav-inner">
-    <a href="/" class="nav-brand">
-      <div class="nav-logo">S</div>
-      <div class="nav-title">Ship<span>fast</span></div>
-    </a>
-    <div style="display:flex;gap:.75rem;align-items:center">
+    <div class="nav-left">
+      <a href="/" class="nav-brand">
+        <div class="nav-logo">S</div>
+        <div class="nav-title">Ship<span>fast</span></div>
+      </a>
+      <div class="nav-links">
+        <a href="#pages" class="nav-link" data-nav="pages">Published pages</a>
+        <a href="#how" class="nav-link" data-nav="how">How it works</a>
+      </div>
+    </div>
+    <div style="display:flex;gap:.6rem;align-items:center">
       <div class="nav-stats">
         <div class="nav-stat"><span class="nav-stat-num" id="totalPages">0</span> shipped</div>
         <div class="nav-stat" title="Last published"><span class="nav-stat-num" id="lastPublished">&mdash;</span></div>
       </div>
+      <button class="icon-btn" id="themeToggle" aria-label="Toggle theme" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
       ${
         isLoggedIn
           ? '<button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Ship</button>' +
@@ -640,69 +851,101 @@ kbd{
 
 <div class="wrap">
 
-  <div class="hero">
-    <h2>Build it. <span class="grad">Ship it.</span><br/>Share it.</h2>
-    <p>Drop any HTML or React code and get a live, shareable URL instantly. No deploy pipeline needed.</p>
-    <div class="hero-cta">
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-copy">
+        <div class="eyebrow"><span class="dot"></span>Internal · zero-config hosting</div>
+        <h2>Your AI artifact,<br/><span class="grad">live in seconds.</span></h2>
+        <p>Drop any HTML or React snippet and Shipfast hands you a shareable link &mdash; instantly. No build step, no deploy pipeline, no waiting around.</p>
+        <div class="hero-cta">
+          ${
+            isLoggedIn
+              ? '<button class="btn btn-primary" onclick="openModal()"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Ship a page</button>' +
+                '<a href="#pages" class="btn-browse">Browse published pages <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>'
+              : '<a href="/login" class="btn btn-primary"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Login to publish</a>'
+          }
+        </div>
+      </div>
       ${
         isLoggedIn
-          ? '<button class="btn btn-primary" onclick="openModal()"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg>Ship a page</button><span class="shortcut-hint">or press N</span>'
-          : '<a href="/login" class="btn btn-primary"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>Login to publish</a>'
+          ? '<div class="hero-demo" id="heroDemo">' +
+              '<div class="hero-demo-bar">' +
+                '<span class="dots"><i></i><i></i><i></i></span>' +
+                '<input class="hero-demo-file" id="heroDemoFile" type="text" value="untitled.html" spellcheck="false" autocomplete="off" aria-label="Filename / slug" />' +
+                '<span class="hero-demo-tag" id="heroDemoTag">draft</span>' +
+              '</div>' +
+              '<textarea class="hero-demo-code" id="heroDemoCode" placeholder="Paste HTML, JSX, or Markdown — ⌘↵ to ship" spellcheck="false"></textarea>' +
+              '<div class="hero-url-result" id="heroUrlResult">' +
+                '<span class="live-dot"></span>' +
+                '<span class="hero-url-text" id="heroUrlText">…</span>' +
+                '<button class="hero-url-copy" id="heroUrlCopy" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button>' +
+              '</div>' +
+              '<div class="hero-demo-foot">' +
+                '<button class="hero-ship-btn" id="heroShipBtn" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ship ⌘↵</button>' +
+                '<span class="hero-demo-status" id="heroDemoStatus">ready</span>' +
+              '</div>' +
+            '</div>'
+          : ''
       }
     </div>
-  </div>
+  </section>
 
-  <div class="section-header" id="sectionHeader" style="display:none">
-    <div style="display:flex;align-items:center;gap:1rem">
-      <div class="section-title">All Pages <span class="section-count" id="count"></span></div>
-      <div class="view-toggle" id="viewToggle">
-        <button type="button" class="active" id="viewFolderBtn" onclick="setViewMode('folder')">
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h5l2 3h7a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
-          Folders
-        </button>
-        <button type="button" id="viewFlatBtn" onclick="setViewMode('flat')">
-          <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-          Flat
-        </button>
-      </div>
+  <span id="pages" style="position:relative;top:-84px"></span>
+  <div class="section-head" id="sectionHeader" style="display:none">
+    <div class="section-head-l">
+      <div class="section-eyebrow">Published pages</div>
+      <h2 class="section-h2">Everything the team has shipped <span class="cnt mono" id="count">0 pages</span></h2>
+      <p class="section-sub">Open any page, copy its link, or filter by collection.</p>
     </div>
-    <div class="sort-wrap">
-      <select class="sort-select" id="sortSelect">
-        <option value="newest">Newest first</option>
-        <option value="oldest">Oldest first</option>
+    <div class="section-head-r">
+      <div class="search-wrap">
+        <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        <input type="text" id="searchInput" class="search-input" placeholder="search pages&hellip;" autocomplete="off" spellcheck="false"/>
+      </div>
+      <select class="sort-select" id="sortSelect" title="Sort">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
         <option value="az">A &rarr; Z</option>
         <option value="za">Z &rarr; A</option>
       </select>
-      <div class="search-wrap">
-        <svg class="search-icon" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-        <input type="text" id="searchInput" class="search-input" placeholder="Search pages&hellip;" autocomplete="off" spellcheck="false"/>
-      </div>
     </div>
   </div>
+  <div class="folders" id="folders" style="display:none"></div>
   <div id="breadcrumbs" style="display:none"></div>
   <div id="pagesList"></div>
 
+  <div class="steps-eyebrow" id="how">How it works</div>
   <div class="features" id="howSection">
     <div class="features-grid">
       <div class="feature">
-        <div class="feature-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-        <h4>Instant deploy</h4>
-        <p>Paste code, pick a slug, click ship. Live in under a second.</p>
+        <div class="step-n">01</div>
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg>Paste</h4>
+        <p>Drop raw HTML, a React component, or Markdown straight into the editor. No scaffolding required.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M16 18l6-6-6-6"/><path d="M8 6l-6 6 6 6"/></svg></div>
-        <h4>HTML, React &amp; Markdown</h4>
-        <p>Auto-detects HTML, JSX, or Markdown. Each gets beautifully rendered automatically.</p>
+        <div class="step-n">02</div>
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>Ship</h4>
+        <p>One keystroke renders it live on a clean <code style="font-family:var(--mono);font-size:.72rem;background:var(--bg);padding:.05rem .35rem;border-radius:4px;border:1px solid var(--border);color:var(--accent2)">/p/slug</code> URL &mdash; instantly previewable.</p>
       </div>
       <div class="feature">
-        <div class="feature-icon"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg></div>
-        <h4>Shareable URLs</h4>
-        <p>Every page gets a clean <code style="font-family:var(--mono);font-size:.72rem;background:var(--bg);padding:.1rem .35rem;border-radius:4px;border:1px solid var(--border);color:var(--accent2)">/p/slug</code> link you can send anyone.</p>
+        <div class="step-n">03</div>
+        <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Share</h4>
+        <p>Copy the link and drop it in a PR, a Slack thread, or a design review. Done.</p>
       </div>
     </div>
   </div>
 
-  <div class="footer">Shipfast &mdash; zero to deployed in seconds</div>
+  <footer class="footer-v2">
+    <div class="footer-l">
+      <div class="nav-logo" style="width:24px;height:24px;border-radius:6px;font-size:.7rem">S</div>
+      <span>Shipfast &mdash; zero to deployed in seconds</span>
+    </div>
+    <div class="footer-links">
+      <a href="#pages">Pages</a>
+      <a href="#how">How it works</a>
+      <a href="/settings">Settings</a>
+    </div>
+  </footer>
 </div>
 
 <!-- Publish Modal -->
@@ -1126,113 +1369,113 @@ function renderPageCardHtml(p) {
   const ago = timeAgo(new Date(p.updated));
   const desc = (p.description || '').trim();
   const mine = canManage(p);
-  const viewsHtml = '<span style="display:inline-flex;align-items:center;gap:3px;color:var(--muted2);font-size:.7rem;margin-left:.5rem">' + eyeSvg + ' ' + fmtViews(p.views || 0) + '</span>';
-  return '<a class="card" href="/p/' + p.slug + '" target="_blank">' +
-    '<div class="card-body">' +
-      '<div class="card-thumb"><iframe src="/p/' + p.slug + '" loading="lazy" tabindex="-1"></iframe></div>' +
-      '<div class="card-title-wrap">' +
-        '<div class="card-title">' + esc(p.title) + '</div>' +
-        '<div class="card-slug-inline">/p/' + p.slug + (p.access==='publisher'?'<span class="lock-badge"><svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>Publisher</span>':'') + '</div>' +
-      '</div>' +
-      (desc ? '<div class="card-desc">' + esc(desc) + '</div>' : '<div class="card-desc card-desc--empty">&nbsp;</div>') +
-      '<div class="card-footer">' +
-        '<div class="card-time">' + clockSvg + ' ' + ago + (p.ownerName?'<span style="margin-left:.3rem;color:var(--muted2)">by ' + esc(p.ownerName) + '</span>':'') + viewsHtml + '</div>' +
-        '<div class="card-actions">' +
-          (mine?'<button class="btn-edit" onclick="editPage(event,&apos;' + p.slug + '&apos;)">' + editSvg + ' Edit</button>':'') +
-          '<button class="btn-copy" onclick="copyPageUrl(event,&apos;' + p.slug + '&apos;)">' + copySvg + ' Copy URL</button>' +
-          (mine?'<button class="btn btn-danger" onclick="deletePage(event,&apos;' + p.slug + '&apos;)">Delete</button>':'') +
-        '</div>' +
-      '</div>' +
-    '</div></a>';
+  const lock = p.access==='publisher'
+    ? '<span class="lock"><svg width="8" height="8" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Publisher</span>'
+    : '';
+  return '<a class="card-v2" href="/p/' + p.slug + '" target="_blank">' +
+    '<div class="card-thumb-v2"><iframe src="/p/' + p.slug + '" loading="lazy" tabindex="-1"></iframe></div>' +
+    '<div class="card-body-v2">' +
+      '<div class="card-title-v2">' + esc(p.title) + '</div>' +
+      '<div class="card-slug-v2">/p/' + esc(p.slug) + ' ' + lock + '</div>' +
+      (desc ? '<div class="card-desc-v2">' + esc(desc) + '</div>' : '') +
+    '</div>' +
+    '<div class="card-foot-v2">' +
+      '<span class="meta">' + clockSvg + ' ' + ago + '</span>' +
+      '<span class="meta">' + eyeSvg + ' ' + fmtViews(p.views || 0) + '</span>' +
+      '<span class="act">' +
+        (mine ? '<button type="button" class="btn-link" onclick="editPage(event,&apos;' + p.slug + '&apos;)">' + editSvg + ' Edit</button>' : '') +
+        '<button type="button" class="btn-link" onclick="copyPageUrl(event,&apos;' + p.slug + '&apos;)">' + copySvg + ' Copy URL</button>' +
+        (mine ? '<button type="button" class="btn-link danger" onclick="deletePage(event,&apos;' + p.slug + '&apos;)">Delete</button>' : '') +
+      '</span>' +
+    '</div>' +
+  '</a>';
 }
 
+function getTopLevelFolders(pages){
+  const counts = new Map();
+  pages.forEach(p => {
+    const idx = p.slug.indexOf('/');
+    if (idx === -1) return;
+    const folder = p.slug.substring(0, idx);
+    counts.set(folder, (counts.get(folder) || 0) + 1);
+  });
+  return Array.from(counts.entries())
+    .map(([name, count]) => ({ name: name, count: count }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function prettyFolder(name){
+  return name.split('-').map(w => w ? w.charAt(0).toUpperCase() + w.slice(1) : w).join(' ');
+}
+
+function renderFolderRail(){
+  const el = document.getElementById('folders');
+  const folders = getTopLevelFolders(allPages);
+  const total = allPages.length;
+  if (total === 0) { el.style.display = 'none'; return; }
+  el.style.display = 'flex';
+  const folderSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
+  const gridSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>';
+  let html = '<button type="button" class="folder" data-folder="all" aria-pressed="' + (activeFolder==='all') + '">' + gridSvg + 'All pages <span class="fc">' + total + '</span></button>';
+  folders.forEach(f => {
+    html += '<button type="button" class="folder" data-folder="' + esc(f.name) + '" aria-pressed="' + (activeFolder===f.name) + '">' + folderSvg + esc(prettyFolder(f.name)) + ' <span class="fc">' + f.count + '</span></button>';
+  });
+  el.innerHTML = html;
+  el.querySelectorAll('.folder').forEach(btn => {
+    btn.addEventListener('click', () => {
+      activeFolder = btn.dataset.folder;
+      renderFolderRail();
+      renderPages(searchInput.value.trim().toLowerCase());
+    });
+  });
+}
+
+let activeFolder = 'all';
+
 function renderPages(query){
-  const el=document.getElementById('pagesList'),header=document.getElementById('sectionHeader');
-  const count=document.getElementById('count'),totalEl=document.getElementById('totalPages');
-  const lastEl=document.getElementById('lastPublished'),howSection=document.getElementById('howSection');
+  const el = document.getElementById('pagesList');
+  const header = document.getElementById('sectionHeader');
+  const count = document.getElementById('count');
+  const totalEl = document.getElementById('totalPages');
+  const lastEl = document.getElementById('lastPublished');
 
-  totalEl.textContent=allPages.length;
-  lastEl.textContent=allPages.length?timeAgo(new Date(allPages[0].updated)):'\\u2014';
+  totalEl.textContent = allPages.length;
+  lastEl.textContent = allPages.length ? timeAgo(new Date(allPages[0].updated)) : '\\u2014';
 
-  // Hide "how it works" if pages exist
-  howSection.style.display=allPages.length?'none':'block';
-
-  if(!allPages.length){
-    header.style.display='none';
-    document.getElementById('breadcrumbs').style.display='none';
-    el.innerHTML='<div class="empty-state">' +
+  if (!allPages.length) {
+    header.style.display = 'none';
+    document.getElementById('folders').style.display = 'none';
+    el.innerHTML = '<div class="empty-state">' +
       '<div class="empty-icon">&#128196;</div><h3>No pages yet</h3>' +
-      '<p>' + (IS_LOGGED_IN?'Ship your first page and it will appear here.':'No public pages have been published yet.') + '</p>' +
-      (IS_LOGGED_IN?'<button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg> Publish your first page</button>':'') + '</div>';
+      '<p>' + (IS_LOGGED_IN ? 'Ship your first page and it will appear here.' : 'No public pages have been published yet.') + '</p>' +
+      (IS_LOGGED_IN ? '<button class="btn btn-primary" onclick="openModal()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 5v14m-7-7h14"/></svg> Publish your first page</button>' : '') +
+    '</div>';
     return;
   }
 
-  header.style.display='flex';
-  renderBreadcrumbs();
+  header.style.display = 'flex';
+  renderFolderRail();
 
-  if (currentViewMode === 'folder' && !query) {
-    const subfolders = getSubfolders(allPages, currentFolder);
-    const directPages = allPages.filter(p => getParentFolder(p.slug) === currentFolder);
-    const sortedFolders = subfolders.sort((a,b) => a.name.localeCompare(b.name));
-    const sortedPages = sortPages(directPages);
-
-    count.textContent = (currentFolder ? esc(currentFolder) + ' | ' : '') + allPages.length + ' page' + (allPages.length === 1 ? '' : 's');
-
-    let html = '';
-
-    if (sortedFolders.length > 0) {
-      html += '<div style="margin-bottom:1.5rem">' +
-        '<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;color:var(--muted);letter-spacing:.05em;margin-bottom:.75rem">Folders</div>' +
-        '<div class="card-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">';
-      html += sortedFolders.map(f => {
-        const fullPath = currentFolder ? currentFolder + '/' + f.name : f.name;
-        return '<div class="folder-card" onclick="navigateToFolder(&apos;' + fullPath + '&apos;)">' +
-          '<div class="folder-icon">' +
-            '<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 7a2 2 0 012-2h5l2 3h7a2 2 0 012 2v7a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>' +
-          '</div>' +
-          '<div class="folder-info">' +
-            '<div class="folder-name">' + esc(f.name) + '</div>' +
-            '<div class="folder-count">' + f.count + ' page' + (f.count===1?'':'s') + '</div>' +
-          '</div>' +
-        '</div>';
-      }).join('');
-      html += '</div></div>';
-    }
-
-    if (sortedPages.length > 0) {
-      if (sortedFolders.length > 0) {
-        html += '<div style="font-size:.7rem;font-weight:600;text-transform:uppercase;color:var(--muted);letter-spacing:.05em;margin-top:1.5rem;margin-bottom:.75rem">Pages</div>';
-      }
-      html += '<div class="card-grid">';
-      html += sortedPages.map(p => renderPageCardHtml(p)).join('');
-      html += '</div>';
-    }
-
-    if (sortedFolders.length === 0 && sortedPages.length === 0) {
-      html = '<div style="text-align:center;padding:4rem 2rem;color:var(--muted);font-size:.85rem">' +
-        '<div style="font-size:2rem;margin-bottom:.5rem">&#128193;</div>' +
-        'This folder is empty.' +
-      '</div>';
-    }
-    el.innerHTML = html;
-  } else {
-    // Flat view or searching
-    let filtered = allPages;
-    if (currentFolder && currentViewMode === 'folder') {
-      filtered = allPages.filter(p => p.slug === currentFolder || p.slug.startsWith(currentFolder + "/"));
-    }
-    if (query) {
-      filtered = filtered.filter(p => p.title.toLowerCase().includes(query) || p.slug.includes(query) || (p.description||'').toLowerCase().includes(query));
-    }
-    filtered = sortPages(filtered);
-    count.textContent = (query ? filtered.length + ' / ' : '') + allPages.length + ' page' + (allPages.length === 1 ? '' : 's');
-
-    if (query && !filtered.length) {
-      el.innerHTML = '<div style="text-align:center;padding:3rem;color:var(--muted);font-size:.85rem">No pages match \\u201c' + esc(query) + '\\u201d</div>';
-      return;
-    }
-    el.innerHTML = '<div class="card-grid">' + filtered.map(p => renderPageCardHtml(p)).join('') + '</div>';
+  let filtered = allPages;
+  if (activeFolder !== 'all') {
+    filtered = filtered.filter(p => p.slug === activeFolder || p.slug.startsWith(activeFolder + '/'));
   }
+  if (query) {
+    filtered = filtered.filter(p =>
+      p.title.toLowerCase().includes(query) ||
+      p.slug.toLowerCase().includes(query) ||
+      (p.description || '').toLowerCase().includes(query)
+    );
+  }
+  filtered = sortPages(filtered);
+
+  count.textContent = filtered.length + (filtered.length === 1 ? ' page' : ' pages');
+
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="grid-empty">// no pages in this collection yet</div>';
+    return;
+  }
+  el.innerHTML = '<div class="grid">' + filtered.map(p => renderPageCardHtml(p)).join('') + '</div>';
 }
 
 async function loadPages(){
@@ -1254,6 +1497,189 @@ function showToast(msg,type='ok'){
   t.className='toast show '+type;t.style.pointerEvents='';
   clearTimeout(toastTimer);toastTimer=setTimeout(()=>{t.className='toast'},3000);
 }
+
+/* ── Theme toggle ── */
+(function(){
+  const root=document.documentElement, KEY='shipfast-theme';
+  const btn=document.getElementById('themeToggle');
+  if(!btn) return;
+  const moon='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
+  const sun='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  const saved=localStorage.getItem(KEY); if(saved) root.setAttribute('data-theme',saved);
+  function sync(){ btn.innerHTML = root.getAttribute('data-theme')==='light' ? moon : sun; }
+  sync();
+  btn.addEventListener('click',()=>{
+    const next = root.getAttribute('data-theme')==='light' ? 'dark' : 'light';
+    root.setAttribute('data-theme',next); localStorage.setItem(KEY,next); sync();
+  });
+})();
+
+/* ── Hero inline editor — real publish via /api/pages ── */
+(function(){
+  if(!IS_LOGGED_IN) return;
+  const code=document.getElementById('heroDemoCode');
+  const btn=document.getElementById('heroShipBtn');
+  const status=document.getElementById('heroDemoStatus');
+  const result=document.getElementById('heroUrlResult');
+  const urlText=document.getElementById('heroUrlText');
+  const tag=document.getElementById('heroDemoTag');
+  const fileInput=document.getElementById('heroDemoFile');
+  const copyBtn=document.getElementById('heroUrlCopy');
+  if(!code||!btn) return;
+  let pubSlug='';
+  let resetTimer=null;
+  let titleManuallyEdited=false;
+
+  function truncate(s, n){ return s.length > n ? s.slice(0, n-1) + '\\u2026' : s; }
+  function fitSize(){
+    if(!fileInput) return;
+    fileInput.size = Math.max(12, Math.min(fileInput.value.length || 12, 30));
+  }
+  function setFile(text){
+    if(!fileInput) return;
+    fileInput.value = text;
+    fitSize();
+  }
+  function extOfType(t){ return t==='jsx' ? '.jsx' : (t==='md' ? '.md' : '.html'); }
+
+  function update(){
+    // Publish gate: textarea content is the only thing that matters.
+    const has = code.value.trim().length > 0;
+    btn.disabled = !has;
+    if (!has) {
+      tag.textContent = 'draft';
+      if (!titleManuallyEdited) setFile('untitled.html');
+      return;
+    }
+    const t = detectType(code.value);
+    tag.textContent = t;
+    if (!titleManuallyEdited && fileInput) {
+      const title = extractTitle(code.value);
+      const stem = title ? slugify(title) : 'untitled';
+      setFile(truncate(stem || 'untitled', 28) + extOfType(t));
+    }
+  }
+  code.addEventListener('input', update);
+
+  if (fileInput) {
+    fileInput.addEventListener('input', () => {
+      titleManuallyEdited = true;
+      fitSize();
+    });
+    fileInput.addEventListener('blur', () => {
+      // If they wipe it back to empty, return to auto-derived preview.
+      if (!fileInput.value.trim()) {
+        titleManuallyEdited = false;
+        update();
+      }
+    });
+    fileInput.addEventListener('keydown', e => {
+      // Enter from the filename field shouldn't submit anything;
+      // shift focus to the code area so users can fill it in.
+      if (e.key === 'Enter') { e.preventDefault(); code.focus(); }
+    });
+    fitSize();
+  }
+
+  function resetDraft(){
+    code.value = '';
+    pubSlug = '';
+    titleManuallyEdited = false;
+    setFile('untitled.html');
+    result.classList.remove('show');
+    status.textContent = 'ready';
+    update();
+    resetTimer = null;
+  }
+
+  function deriveSlug(html){
+    // User's filename wins if they edited it; otherwise extract from code; else random.
+    const userStem = fileInput
+      ? fileInput.value.trim().replace(/\\.(html?|jsx?|tsx?|md)$/i, '')
+      : '';
+    if (titleManuallyEdited && userStem) return slugify(userStem);
+    const title = extractTitle(html);
+    if (title) return slugify(title);
+    return 'untitled-' + Date.now().toString(36).slice(-5);
+  }
+
+  async function shipInline(){
+    // Hard gate: textarea must have content. Title alone is not enough.
+    if (btn.disabled || code.value.trim().length === 0) return;
+    const html = code.value.trim();
+    btn.disabled = true;
+    if (resetTimer) { clearTimeout(resetTimer); resetTimer = null; }
+    result.classList.remove('show');
+    status.innerHTML = '<span class="hero-demo-spinner"></span>publishing&hellip;';
+    const slug = deriveSlug(html);
+    try {
+      const r = await fetch('/api/pages', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ slug: slug, html: html, access: 'publisher' })
+      });
+      const d = await r.json();
+      if (d.ok) {
+        pubSlug = d.slug;
+        const host = HOST.replace(/^https?:\\/\\//,'');
+        urlText.innerHTML = host + '/p/<b>' + esc(d.slug) + '</b>';
+        result.classList.add('show');
+        status.innerHTML = '<span style="color:var(--success)">\\u25cf live</span> &middot; resets in 5s';
+        loadPages();
+        // Clear the textarea immediately so the draft slot is reusable;
+        // keep URL chip visible briefly so user can copy/click, then fade.
+        code.value = '';
+        titleManuallyEdited = false;
+        setFile('untitled.html');
+        update();
+        resetTimer = setTimeout(resetDraft, 7000);
+      } else {
+        status.textContent = d.error || 'error';
+        btn.disabled = code.value.trim().length === 0;
+      }
+    } catch(e) {
+      status.textContent = 'network error';
+      btn.disabled = code.value.trim().length === 0;
+    }
+  }
+  btn.addEventListener('click', shipInline);
+  code.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); shipInline(); }
+  });
+  // If the user starts typing again before the auto-reset fires, kill it
+  // and hide the URL chip — they've moved on.
+  code.addEventListener('input', () => {
+    if (resetTimer && code.value.length > 0) {
+      clearTimeout(resetTimer); resetTimer = null;
+      result.classList.remove('show');
+      status.textContent = 'ready';
+    }
+  });
+
+  copyBtn.addEventListener('click', () => {
+    if (!pubSlug) return;
+    navigator.clipboard.writeText(HOST + '/p/' + pubSlug);
+    const orig = copyBtn.innerHTML;
+    copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Copied';
+    setTimeout(()=>{ copyBtn.innerHTML = orig; }, 1500);
+  });
+
+  update();
+})();
+
+/* ── Nav scroll-spy ── */
+(function(){
+  const links={pages:document.querySelector('[data-nav="pages"]'),how:document.querySelector('[data-nav="how"]')};
+  if(!links.pages && !links.how) return;
+  function spy(){
+    const mark=window.scrollY+140; let active=null;
+    ['pages','how'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(el && el.getBoundingClientRect().top+window.scrollY <= mark) active=id;
+    });
+    Object.keys(links).forEach(k=>{ if(links[k]) links[k].classList.toggle('active', k===active); });
+  }
+  window.addEventListener('scroll',spy,{passive:true}); spy();
+})();
 
 loadPages();
 </script>
