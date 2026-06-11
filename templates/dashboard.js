@@ -29,6 +29,8 @@ function dashboardHtml(user) {
 <script>(function(){try{var s=localStorage.getItem('shipfast-theme');if(s==='light'||s==='dark')document.documentElement.setAttribute('data-theme',s);}catch(e){}})();</script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
+html,body{scrollbar-width:none;-ms-overflow-style:none}
+html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}
 
 :root{
   --bg:#0c0a09;
