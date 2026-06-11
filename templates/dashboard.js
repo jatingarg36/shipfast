@@ -492,6 +492,29 @@ textarea{min-height:200px}
 .search-input:focus{border-color:rgba(249,115,22,.4);width:280px}
 .search-input::placeholder{color:var(--muted2)}
 
+/* ── Upload artifact ── */
+.field-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.35rem;gap:.5rem}
+.field-head label{margin-bottom:0}
+.upload-btn{
+  display:inline-flex;align-items:center;gap:.35rem;
+  background:var(--surface2);border:1px solid var(--border);
+  color:var(--muted);font-family:var(--sans);font-size:.7rem;font-weight:600;
+  padding:.3rem .6rem;border-radius:6px;cursor:pointer;
+  transition:all .15s;
+}
+.upload-btn:hover{color:var(--accent2);border-color:rgba(249,115,22,.3);background:rgba(249,115,22,.06)}
+.upload-btn svg{width:12px;height:12px}
+.upload-btn.uploaded{color:var(--success);border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
+.hero-upload-btn{
+  display:inline-flex;align-items:center;gap:.3rem;
+  background:transparent;border:1px solid var(--border);
+  color:var(--muted);font-family:var(--mono);font-size:.7rem;font-weight:500;
+  padding:.45rem .7rem;border-radius:7px;cursor:pointer;
+  transition:all .15s;
+}
+.hero-upload-btn:hover{color:var(--accent2);border-color:rgba(249,115,22,.35);background:rgba(249,115,22,.05)}
+.hero-upload-btn svg{width:12px;height:12px}
+
 /* ── Drag & Drop ── */
 .drop-zone{position:relative}
 .drop-overlay{
@@ -906,6 +929,8 @@ kbd{
               '</div>' +
               '<div class="hero-demo-foot">' +
                 '<button class="hero-ship-btn" id="heroShipBtn" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ship ⌘↵</button>' +
+                '<button class="hero-upload-btn" id="heroUploadBtn" type="button" title="Upload an HTML, JSX, or Markdown file"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Upload</button>' +
+                '<input type="file" id="heroFileUpload" accept=".html,.htm,.jsx,.js,.md,.markdown,.txt,text/html,text/markdown,text/plain" style="display:none"/>' +
                 '<span class="hero-demo-status" id="heroDemoStatus">ready</span>' +
               '</div>' +
             '</div>'
@@ -1003,9 +1028,16 @@ kbd{
         </div>
       </div>
       <div class="field" style="position:relative">
-        <label>Code</label>
+        <div class="field-head">
+          <label>Code</label>
+          <button type="button" class="upload-btn" id="uploadBtn" onclick="document.getElementById('fileUpload').click()" title="Upload an HTML, JSX, or Markdown file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Upload file
+          </button>
+          <input type="file" id="fileUpload" accept=".html,.htm,.jsx,.js,.md,.markdown,.txt,text/html,text/markdown,text/plain" style="display:none"/>
+        </div>
         <div class="drop-zone" id="dropZone">
-          <textarea id="html" placeholder="Paste HTML, JSX, or Markdown &mdash; auto-detected&hellip;"></textarea>
+          <textarea id="html" placeholder="Paste HTML, JSX, or Markdown &mdash; or click Upload file&hellip;"></textarea>
           <div class="drop-overlay" id="dropOverlay">
             <svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 16V4m0 0l-4 4m4-4l4 4"/><path d="M2 17l.621 2.485A2 2 0 004.561 21h14.878a2 2 0 001.94-1.515L22 17"/></svg>
             Drop file here
@@ -1229,14 +1261,53 @@ htmlInput.addEventListener('input',()=>{
   },300);
 });
 
+// ── File ingestion shared helper ──
+// Reads a File as text, drops it into the textarea, and (if the slug
+// hasn't been hand-edited) seeds the slug from the filename stem.
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB safety cap
+function ingestFile(f){
+  if(!f) return;
+  if(f.size > MAX_UPLOAD_BYTES){
+    showToast('File too large (max 5 MB)','err'); return;
+  }
+  const r=new FileReader();
+  r.onload=()=>{
+    htmlInput.value=r.result;
+    if(!slugManuallyEdited || !slugInput.value.trim()){
+      const stem=(f.name||'').replace(/\\.[^.]+$/,'');
+      const s=slugify(stem);
+      if(s){ slugInput.value=s; slugUrl.textContent=HOST+'/p/'+s; checkSlugExists(s); }
+    }
+    htmlInput.dispatchEvent(new Event('input'));
+    const ub=document.getElementById('uploadBtn');
+    if(ub){
+      const orig=ub.innerHTML;
+      ub.classList.add('uploaded');
+      ub.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'+esc(f.name);
+      setTimeout(()=>{ ub.classList.remove('uploaded'); ub.innerHTML=orig; },2200);
+    }
+  };
+  r.onerror=()=>showToast('Could not read file','err');
+  r.readAsText(f);
+}
+
 // ── Drag & Drop ──
 const dropZone=document.getElementById('dropZone');
 ['dragenter','dragover'].forEach(ev=>{dropZone.addEventListener(ev,e=>{e.preventDefault();dropZone.classList.add('dragover')})});
 ['dragleave','drop'].forEach(ev=>{dropZone.addEventListener(ev,()=>{dropZone.classList.remove('dragover')})});
 dropZone.addEventListener('drop',e=>{
-  e.preventDefault();const f=e.dataTransfer.files[0];if(!f)return;
-  const r=new FileReader();r.onload=()=>{htmlInput.value=r.result;htmlInput.dispatchEvent(new Event('input'))};r.readAsText(f);
+  e.preventDefault();
+  ingestFile(e.dataTransfer.files[0]);
 });
+
+// ── File picker (upload artifact) ──
+const fileUpload=document.getElementById('fileUpload');
+if(fileUpload){
+  fileUpload.addEventListener('change',e=>{
+    ingestFile(e.target.files[0]);
+    e.target.value=''; // allow re-selecting the same file
+  });
+}
 
 // ── Modal ──
 function openModal(isEdit){
@@ -1686,6 +1757,40 @@ function showToast(msg,type='ok'){
     copyBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>Copied';
     setTimeout(()=>{ copyBtn.innerHTML = orig; }, 1500);
   });
+
+  // Hero file upload — same flow as drag-drop, but via picker.
+  const heroUploadBtn = document.getElementById('heroUploadBtn');
+  const heroFileUpload = document.getElementById('heroFileUpload');
+  if (heroUploadBtn && heroFileUpload) {
+    heroUploadBtn.addEventListener('click', () => heroFileUpload.click());
+    heroFileUpload.addEventListener('change', e => {
+      const f = e.target.files[0];
+      e.target.value = '';
+      if (!f) return;
+      if (f.size > 5 * 1024 * 1024) { status.textContent = 'file too large (5 MB max)'; return; }
+      const r = new FileReader();
+      r.onload = () => {
+        code.value = r.result;
+        // Seed the filename field from the upload (unless user already typed one)
+        if (fileInput && (!titleManuallyEdited || !fileInput.value.trim())) {
+          setFile(truncate(f.name, 28));
+          titleManuallyEdited = true; // upload filename takes precedence over auto-derived title
+        }
+        update();
+        code.focus();
+      };
+      r.onerror = () => { status.textContent = 'read error'; };
+      r.readAsText(f);
+    });
+    // Drag-and-drop onto the hero textarea
+    ['dragenter','dragover'].forEach(ev => code.addEventListener(ev, e => { e.preventDefault(); }));
+    code.addEventListener('drop', e => {
+      e.preventDefault();
+      const f = e.dataTransfer.files[0]; if (!f) return;
+      heroFileUpload.files = e.dataTransfer.files;
+      heroFileUpload.dispatchEvent(new Event('change'));
+    });
+  }
 
   update();
 })();
