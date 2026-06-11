@@ -83,7 +83,11 @@ router.get("/p/:slug(*)", async (req, res) => {
     assistantTag = `<script src="/assistant.js" data-sf-assistant data-slug="${slugAttr}" defer></script>`;
   }
 
-  const inject = badge + assistantTag;
+  // Hide scrollbars on published pages (and their iframe thumbnails on the dashboard)
+  // — page is still scrollable, just no visible scrollbar gutter.
+  const scrollbarHider = '<style>html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}</style>';
+
+  const inject = scrollbarHider + badge + assistantTag;
   const lastBodyIdx = html.lastIndexOf("</body>");
   const finalHtml =
     lastBodyIdx === -1
