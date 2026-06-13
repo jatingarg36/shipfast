@@ -79,17 +79,19 @@ The route reads the stored HTML, looks at the marker comment, and extracts the o
 - `<!-- page-type:md -->` → match `<!-- md-source:(...) -->`, base64-decode.
 - No marker → return the raw HTML as-is.
 
-The response shape is `{ slug, type, source, access }` — the editor uses `type` to pick a syntax mode and `access` to render the access toggle.
+The response shape is `{ slug, type, source, access, tags }` — the editor uses `type` to pick a syntax mode, `access` to render the access toggle, and `tags` to pre-fill the tag chip-input when editing.
 
 Round-tripping isn't lossless in every case (the jsx un-wrap relies on the structure of `wrapJsx`'s output). If you change `wrapJsx`, change the un-wrap regex in `routes/api.js` at the same time. Same for `wrapMarkdown`.
 
 ## On-serve injection — badge + assistant tag
 
-When `/p/:slug` serves a page (`routes/pages.js`), it injects two things just before `</body>`:
+When `/p/:slug` serves a page (`routes/pages.js`), it injects three things just before `</body>`:
 
 1. **The Shipfast badge** — a fixed-position pill in the bottom-right with the orange flash icon, page view count, and link back to `/`. Inline styles, no external CSS dependency. The view count comes from a synchronous Redis read with a try/catch fallback to 0.
 
-2. **The assistant loader tag** (only when `ASSISTANT_ENABLED && currentUser`) — `<script src="/assistant.js" data-sf-assistant data-slug="..." defer></script>`. The loader script then sets up the floating pill and iframe panel.
+2. **Tag chips** (only when the page has tags) — a fixed-position row in the bottom-left, one per tag. Each is a plain `<a href="/?tag=Name">` so the chips are crawlable and click through to the dashboard filtered by that tag. Tags come from the same `getPageMeta` read used for access (one fetch, both fields), and every tag is HTML-escaped before injection since it ends up in both an attribute and text.
+
+3. **The assistant loader tag** (only when `ASSISTANT_ENABLED && currentUser`) — `<script src="/assistant.js" data-sf-assistant data-slug="..." defer></script>`. The loader script then sets up the floating pill and iframe panel.
 
 The injection picks the *last* `</body>` so pages with multiple body tags (shouldn't happen but possible if a user pastes weird HTML) get the injection in the right place. If there's no `</body>` at all, the badge is appended at the end.
 

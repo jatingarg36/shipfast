@@ -7,6 +7,19 @@ A `Tag:` line (`feature`, `improvement`, `fix`, or `security`) classifies the
 release, and `-` bullets list the user-facing changes. This file is parsed and
 rendered at `/changelog` by `services/changelog.js`.
 
+## v1.6.0 — 2026-06-13 — Page tags
+
+Tag: feature
+
+- Attach up to 3 PascalCase tags per page (e.g. `MachineLearning`, `LeetCode`).
+- Tags can be set at publish time and edited later from the publish/edit dialog.
+- Tags group pages: they appear in the rail next to "All pages", ordered by how many pages use them, with a count on each.
+- Dashboard: tag chips on each card; click a tag (card or rail) to filter the page list (shareable `?tag=` URL).
+- Published pages show crawlable tag chips linking back to the filtered dashboard.
+- API: `tags` accepted on `POST /api/pages`, returned by `GET /api/pages`, filterable via `?tag=` (AND-ed); new `PATCH /api/pages/:slug/tags` and `GET /api/tags` (counts).
+- Tag document counts are maintained in Postgres (new `tags` + `page_tags` tables, kept in sync by a trigger), split by access level so publisher-gated pages never count toward the public view; falls back to deriving counts when no database is configured.
+- Invalid tags return a clear `400` naming the offending tag and the rule it broke.
+
 ## v1.5.0 — 2026-06-13 — Adding support for version history
 
 Tag: feature

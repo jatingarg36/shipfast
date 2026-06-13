@@ -348,6 +348,9 @@ nav{
 }
 .folder[aria-pressed='true'] svg{color:var(--accent2);opacity:1}
 .folder[aria-pressed='true'] .fc{color:var(--accent2);border-color:rgba(249,115,22,.4)}
+/* Tag pills sit in the same rail as folders, after a thin divider. */
+.rail-sep{width:1px;align-self:stretch;background:var(--border);margin:.15rem .35rem}
+.folder.folder-tag svg{color:var(--accent2);opacity:.9}
 
 /* ── Card grid (new) ── */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1.25rem}
@@ -617,6 +620,64 @@ kbd{
   color:#fb923c;background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.15);
   border-radius:5px;padding:.1rem .4rem;margin-left:.4rem;
 }
+
+/* ── Tags: chip-input (publish/edit modal) ── */
+.tag-input-wrap{
+  display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;
+  background:var(--bg);border:1px solid var(--border);border-radius:8px;
+  padding:.45rem .55rem;margin-top:.35rem;
+  transition:border-color .2s,box-shadow .2s;
+}
+.tag-input-wrap.focused{border-color:rgba(249,115,22,.5);box-shadow:0 0 0 3px rgba(249,115,22,.1)}
+.tag-input-wrap.invalid{border-color:rgba(239,68,68,.6);box-shadow:0 0 0 3px rgba(239,68,68,.1)}
+.tag-chip{
+  display:inline-flex;align-items:center;gap:.3rem;
+  font-family:var(--mono);font-size:.72rem;font-weight:600;
+  color:var(--accent2);background:rgba(249,115,22,.1);
+  border:1px solid rgba(249,115,22,.25);border-radius:999px;
+  padding:.15rem .5rem .15rem .6rem;white-space:nowrap;
+}
+.tag-chip button{
+  background:none;border:none;color:inherit;cursor:pointer;
+  font-size:.85rem;line-height:1;padding:0;display:grid;place-items:center;
+  opacity:.7;transition:opacity .15s;
+}
+.tag-chip button:hover{opacity:1}
+.tag-input{
+  flex:1;min-width:120px;background:transparent;border:none;outline:none;
+  color:var(--text);font-family:var(--mono);font-size:.78rem;padding:.15rem .1rem;
+}
+.tag-input::placeholder{color:var(--muted2)}
+.tag-input:disabled{cursor:not-allowed}
+.tag-hint{font-family:var(--mono);font-size:.66rem;color:var(--muted2);margin-top:.3rem;min-height:1.1em;transition:color .15s}
+.tag-hint.err{color:var(--danger)}
+
+/* ── Tags: chips on dashboard cards ── */
+.card-tags-v2{display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.1rem}
+.card-tag{
+  font-family:var(--mono);font-size:.66rem;font-weight:600;
+  color:var(--accent2);background:rgba(249,115,22,.08);
+  border:1px solid rgba(249,115,22,.2);border-radius:999px;
+  padding:.1rem .5rem;cursor:pointer;line-height:1.5;
+  transition:background .15s,border-color .15s;
+}
+.card-tag:hover{background:rgba(249,115,22,.18);border-color:rgba(249,115,22,.4)}
+
+/* ── Tags: active filter pill ── */
+.tag-filter-bar{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin:0 0 1rem}
+.tag-filter-pill{
+  display:inline-flex;align-items:center;gap:.4rem;
+  font-family:var(--mono);font-size:.72rem;font-weight:600;color:var(--text);
+  background:color-mix(in srgb,var(--accent) 14%,var(--surface));
+  border:1px solid rgba(249,115,22,.4);border-radius:999px;padding:.25rem .35rem .25rem .7rem;
+}
+.tag-filter-pill button{
+  background:rgba(255,255,255,.08);border:none;color:var(--text);cursor:pointer;
+  border-radius:50%;width:16px;height:16px;display:grid;place-items:center;
+  font-size:.8rem;line-height:1;transition:background .15s;
+}
+.tag-filter-pill button:hover{background:rgba(239,68,68,.3)}
+.tag-filter-label{font-family:var(--mono);font-size:.68rem;color:var(--muted)}
 
 /* ── Sort ── */
 .sort-wrap{display:flex;align-items:center;gap:.5rem}
@@ -996,6 +1057,7 @@ kbd{
     </div>
   </div>
   <div class="folders" id="folders" style="display:none"></div>
+  <div class="tag-filter-bar" id="tagFilterBar" style="display:none"></div>
   <div id="breadcrumbs" style="display:none"></div>
   <div id="pagesList"></div>
 
@@ -1063,6 +1125,13 @@ kbd{
             Publisher
           </button>
         </div>
+      </div>
+      <div class="field">
+        <label>Tags <span style="color:var(--muted2);font-weight:400">(up to 3, PascalCase)</span></label>
+        <div class="tag-input-wrap" id="tagInputWrap" onclick="document.getElementById('tagInput').focus()">
+          <input type="text" id="tagInput" class="tag-input" placeholder="e.g. MachineLearning &mdash; Enter to add" autocomplete="off" spellcheck="false" maxlength="30"/>
+        </div>
+        <div class="tag-hint" id="tagHint">Letters and digits only, starting uppercase.</div>
       </div>
       <div class="field" style="position:relative">
         <div class="field-head">
@@ -1173,6 +1242,7 @@ const IS_LOGGED_IN = !!USER;
 const IS_ADMIN = USER && USER.role === 'admin';
 function canManage(page){ return IS_ADMIN || (USER && page.owner === USER.id); }
 let allPages = [];
+let allTags = []; // [{ name, count }] ordered by document count (from /api/tags)
 let pendingDeleteSlug = null;
 let undoTimer = null;
 let editingSlug = null;
@@ -1247,6 +1317,96 @@ function setAccessLevel(level) {
     b.classList.toggle('active', b.dataset.access === level);
   });
 }
+
+// ── Tags chip-input (publish/edit modal) ──
+var currentTags = [];
+var TAG_RE = /^[A-Z][A-Za-z0-9]{0,29}$/;
+var RESERVED_TAGS = ['admin','system','internal'];
+var MAX_TAGS = 3;
+
+function setTags(tags){
+  currentTags = (Array.isArray(tags) ? tags : []).slice(0, MAX_TAGS);
+  renderTagChips();
+}
+
+function renderTagChips(){
+  var wrap = document.getElementById('tagInputWrap');
+  var input = document.getElementById('tagInput');
+  if(!wrap || !input) return;
+  // Remove existing chips (keep the input element)
+  wrap.querySelectorAll('.tag-chip').forEach(function(c){ c.remove(); });
+  currentTags.forEach(function(tag, i){
+    var chip = document.createElement('span');
+    chip.className = 'tag-chip';
+    chip.innerHTML = esc(tag) + '<button type="button" aria-label="Remove tag" title="Remove">&times;</button>';
+    chip.querySelector('button').addEventListener('click', function(e){
+      e.stopPropagation();
+      currentTags.splice(i, 1);
+      renderTagChips();
+      input.focus();
+    });
+    wrap.insertBefore(chip, input);
+  });
+  // At cap → disable input
+  var full = currentTags.length >= MAX_TAGS;
+  input.disabled = full;
+  input.placeholder = full ? 'Maximum 3 tags' : 'e.g. MachineLearning — Enter to add';
+}
+
+function validateTagCandidate(raw){
+  var tag = (raw || '').trim();
+  if(!tag) return { ok:false, reason:'' };
+  if(!TAG_RE.test(tag)) return { ok:false, reason:'PascalCase only: start uppercase, letters and digits, no spaces or hyphens.' };
+  if(RESERVED_TAGS.indexOf(tag.toLowerCase()) !== -1) return { ok:false, reason:'"' + tag + '" is reserved.' };
+  if(currentTags.indexOf(tag) !== -1) return { ok:false, reason:'"' + tag + '" is already added.' };
+  return { ok:true, tag:tag };
+}
+
+function setTagHint(msg, isErr){
+  var hint = document.getElementById('tagHint');
+  if(!hint) return;
+  hint.textContent = msg || 'Letters and digits only, starting uppercase.';
+  hint.classList.toggle('err', !!isErr);
+  var wrap = document.getElementById('tagInputWrap');
+  if(wrap) wrap.classList.toggle('invalid', !!isErr);
+}
+
+function addCurrentTag(){
+  var input = document.getElementById('tagInput');
+  if(!input || !input.value.trim()) return;
+  if(currentTags.length >= MAX_TAGS){ setTagHint('Maximum 3 tags.', true); return; }
+  var res = validateTagCandidate(input.value);
+  if(!res.ok){ if(res.reason) setTagHint(res.reason, true); return; }
+  currentTags.push(res.tag);
+  input.value = '';
+  setTagHint('');
+  renderTagChips();
+}
+
+(function initTagInput(){
+  var input = document.getElementById('tagInput');
+  var wrap = document.getElementById('tagInputWrap');
+  if(!input || !wrap) return;
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter' || e.key === ',' ){
+      e.preventDefault();
+      addCurrentTag();
+    } else if(e.key === 'Backspace' && !input.value && currentTags.length){
+      currentTags.pop();
+      renderTagChips();
+    }
+  });
+  input.addEventListener('input', function(){
+    // Live feedback while typing (don't nag on empty)
+    var v = input.value.trim();
+    if(!v){ setTagHint(''); return; }
+    var res = validateTagCandidate(v);
+    setTagHint(res.ok ? '' : res.reason, !res.ok);
+  });
+  input.addEventListener('blur', addCurrentTag);
+  input.addEventListener('focus', function(){ wrap.classList.add('focused'); });
+  input.addEventListener('blur', function(){ wrap.classList.remove('focused'); });
+})();
 
 function slugify(s) {
   return s.toLowerCase()
@@ -1396,6 +1556,9 @@ function resetModalFields(){
   if(slugWarnEl){ slugWarnEl.remove(); slugWarnEl=null; }
   publishBtn.classList.remove('loading'); publishBtn.textContent='Publish';
   setAccessLevel('publisher');
+  setTags([]);
+  const ti=document.getElementById('tagInput'); if(ti) ti.value='';
+  setTagHint('');
   const vl=document.getElementById('versionLabel'); if(vl) vl.value='';
   const vlf=document.getElementById('versionLabelField'); if(vlf) vlf.style.display='none';
 }
@@ -1416,6 +1579,7 @@ async function editPage(e,slug){
   slugManuallyEdited=true;
   htmlInput.value=r.source;
   setAccessLevel(r.access||'public');
+  setTags(r.tags||[]);
   htmlInput.dispatchEvent(new Event('input'));
   // Show the optional version label field only when republishing
   const vlf=document.getElementById('versionLabelField'); if(vlf) vlf.style.display='block';
@@ -1450,7 +1614,9 @@ async function publish(){
   publishBtn.classList.add('loading');publishBtn.textContent=editingSlug?'Updating':'Publishing';
   try{
     const versionLabel=editingSlug ? ((document.getElementById('versionLabel')||{}).value || '').trim() : '';
-    const r=await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug,html,access:currentAccess,versionLabel})});
+    // Fold any half-typed tag still sitting in the input
+    addCurrentTag();
+    const r=await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug,html,access:currentAccess,versionLabel,tags:currentTags})});
     const d=await r.json();
     if(d.ok){
       document.getElementById('modalStep1').style.display='none';
@@ -1637,12 +1803,19 @@ function renderPageCardHtml(p) {
   const lock = p.access==='publisher'
     ? '<span class="lock"><svg width="8" height="8" fill="none" stroke="currentColor" stroke-width="2.4" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Publisher</span>'
     : '';
+  const tags = Array.isArray(p.tags) ? p.tags : [];
+  const tagsHtml = tags.length
+    ? '<div class="card-tags-v2">' + tags.map(function(t){
+        return '<span class="card-tag" onclick="filterByTag(event,&apos;' + esc(t) + '&apos;)" title="Filter by ' + esc(t) + '">' + esc(t) + '</span>';
+      }).join('') + '</div>'
+    : '';
   return '<a class="card-v2" href="/p/' + p.slug + '" target="_blank">' +
     '<div class="card-thumb-v2"><iframe src="/p/' + p.slug + '" loading="lazy" tabindex="-1"></iframe></div>' +
     '<div class="card-body-v2">' +
       '<div class="card-title-v2">' + esc(p.title) + '</div>' +
       '<div class="card-slug-v2"><span class="slug-text">/p/' + esc(p.slug) + '</span>' + lock + '</div>' +
       (desc ? '<div class="card-desc-v2">' + esc(desc) + '</div>' : '') +
+      tagsHtml +
     '</div>' +
     '<div class="card-foot-v2">' +
       '<span class="meta">' + clockSvg + ' ' + ago + '</span>' +
@@ -1682,14 +1855,37 @@ function renderFolderRail(){
   el.style.display = 'flex';
   const folderSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
   const gridSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>';
-  let html = '<button type="button" class="folder" data-folder="all" aria-pressed="' + (activeFolder==='all') + '">' + gridSvg + 'All pages <span class="fc">' + total + '</span></button>';
+  const tagSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.59 13.41 11 3.83A2 2 0 0 0 9.59 3H4a1 1 0 0 0-1 1v5.59A2 2 0 0 0 3.83 11l9.58 9.59a2 2 0 0 0 2.83 0l4.35-4.35a2 2 0 0 0 0-2.83z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg>';
+
+  // "All pages" is selected only when no folder AND no tag filter is active.
+  const allActive = activeFolder === 'all' && !activeTag;
+  let html = '<button type="button" class="folder" data-kind="all" aria-pressed="' + allActive + '">' + gridSvg + 'All pages <span class="fc">' + total + '</span></button>';
   folders.forEach(f => {
-    html += '<button type="button" class="folder" data-folder="' + esc(f.name) + '" aria-pressed="' + (activeFolder===f.name) + '">' + folderSvg + esc(prettyFolder(f.name)) + ' <span class="fc">' + f.count + '</span></button>';
+    const pressed = activeFolder === f.name && !activeTag;
+    html += '<button type="button" class="folder" data-kind="folder" data-folder="' + esc(f.name) + '" aria-pressed="' + pressed + '">' + folderSvg + esc(prettyFolder(f.name)) + ' <span class="fc">' + f.count + '</span></button>';
   });
+  // Tag pills — ordered by document count (from /api/tags), shown beside folders.
+  if (allTags.length) {
+    if (folders.length) html += '<span class="rail-sep" aria-hidden="true"></span>';
+    allTags.forEach(t => {
+      const pressed = activeTag != null && activeTag.toLowerCase() === t.name.toLowerCase();
+      html += '<button type="button" class="folder folder-tag" data-kind="tag" data-tag="' + esc(t.name) + '" aria-pressed="' + pressed + '">' + tagSvg + esc(t.name) + ' <span class="fc">' + t.count + '</span></button>';
+    });
+  }
   el.innerHTML = html;
   el.querySelectorAll('.folder').forEach(btn => {
     btn.addEventListener('click', () => {
-      activeFolder = btn.dataset.folder;
+      const kind = btn.dataset.kind;
+      if (kind === 'tag') {
+        // Tags and folders are independent axes — selecting a tag resets the folder.
+        activeTag = btn.dataset.tag;
+        activeFolder = 'all';
+        syncTagToUrl();
+      } else {
+        activeFolder = kind === 'all' ? 'all' : btn.dataset.folder;
+        activeTag = null;
+        syncTagToUrl();
+      }
       renderFolderRail();
       renderPages(searchInput.value.trim().toLowerCase());
     });
@@ -1697,6 +1893,42 @@ function renderFolderRail(){
 }
 
 let activeFolder = 'all';
+let activeTag = (function(){
+  try{ return new URL(window.location.href).searchParams.get('tag') || null; }
+  catch(err){ return null; }
+})();
+
+// Click a tag chip (on a card) → filter the dashboard to that tag.
+function filterByTag(e, tag){
+  if(e){ e.stopPropagation(); e.preventDefault(); }
+  activeTag = tag;
+  syncTagToUrl();
+  renderPages(searchInput.value.trim().toLowerCase());
+}
+function clearTagFilter(){
+  activeTag = null;
+  syncTagToUrl();
+  renderPages(searchInput.value.trim().toLowerCase());
+}
+// Keep ?tag= in the URL so the filter is shareable / survives reload.
+function syncTagToUrl(){
+  try{
+    const u = new URL(window.location.href);
+    if(activeTag) u.searchParams.set('tag', activeTag);
+    else u.searchParams.delete('tag');
+    history.replaceState(null, '', u);
+  }catch(err){}
+}
+function renderTagFilterBar(){
+  const bar = document.getElementById('tagFilterBar');
+  if(!bar) return;
+  if(!activeTag){ bar.style.display='none'; bar.innerHTML=''; return; }
+  bar.style.display='flex';
+  bar.innerHTML = '<span class="tag-filter-label">Filtered by tag:</span>' +
+    '<span class="tag-filter-pill">' + esc(activeTag) +
+      '<button type="button" onclick="clearTagFilter()" title="Clear tag filter" aria-label="Clear tag filter">&times;</button>' +
+    '</span>';
+}
 
 function renderPages(query){
   const el = document.getElementById('pagesList');
@@ -1721,10 +1953,15 @@ function renderPages(query){
 
   header.style.display = 'flex';
   renderFolderRail();
+  renderTagFilterBar();
 
   let filtered = allPages;
   if (activeFolder !== 'all') {
     filtered = filtered.filter(p => p.slug === activeFolder || p.slug.startsWith(activeFolder + '/'));
+  }
+  if (activeTag) {
+    const want = activeTag.toLowerCase();
+    filtered = filtered.filter(p => (p.tags || []).some(t => t.toLowerCase() === want));
   }
   if (query) {
     filtered = filtered.filter(p =>
@@ -1745,7 +1982,12 @@ function renderPages(query){
 }
 
 async function loadPages(){
-  allPages=await fetch('/api/pages').then(r=>r.json());
+  const results = await Promise.all([
+    fetch('/api/pages').then(r=>r.json()),
+    fetch('/api/tags').then(r=>r.json()).catch(function(){ return []; })
+  ]);
+  allPages = results[0];
+  allTags = Array.isArray(results[1]) ? results[1] : [];
   renderPages(searchInput.value.trim().toLowerCase());
 }
 
