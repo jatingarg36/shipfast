@@ -57,15 +57,15 @@ features/              markdown specs for in-flight features (versioning, fork, 
 tests/                 node --test runner; tests/views.test.js is the shape to follow
 ```
 
-The big rule: **routes consume services, services consume `services/s3.js` or a Redis/Postgres client — never the AWS SDK or `pg` directly**. If you find yourself importing `@aws-sdk/client-s3` outside `services/s3.js` or `pg` outside `services/chat-db.js`, you're about to violate the layering.
+The big rule: **routes consume services, services consume `services/s3.js` or the shared `services/pg.js` pool — never the AWS SDK or `pg` directly**. If you find yourself importing `@aws-sdk/client-s3` outside `services/s3.js`, or constructing a `pg` `Pool` outside `services/pg.js`, you're about to violate the layering. The current Postgres-touching services are `services/user.js`, `services/chat-db.js`, and `services/versions.js`; each takes its pool from `pg.getPool()`.
 
 ## How storage is split
 
 There are three stores and each owns a specific kind of data. Mixing them is the most common architectural mistake.
 
-- **S3** — durable content + JSON blobs. Keys you'll see: `pages/{slug}.html`, `meta.json` (page metadata index), `users.json` (user index), `chats/{userId}/{slug}/{chatId}.json` (assistant transcripts). Everything user-visible lives here.
+- **S3** — durable content + JSON blobs. Keys you'll see: `pages/{slug}.html`, `meta.json` (page metadata index), `chats/{userId}/{slug}/{chatId}.json` (assistant transcripts). Everything user-visible lives here.
 - **Redis** — counters and sessions. View counters under `shipfast:views:{slug}`; Express session store via `connect-redis`. Treat Redis as ephemeral: never make page serving block on it (see `routes/pages.js` — view increment is fire-and-forget).
-- **Postgres** — assistant chat *metadata only* (`assistant_chats` table). Transcripts themselves live in S3; the row holds only the S3 key. Feature is off unless `DATABASE_URL` is set (`config.ASSISTANT_ENABLED`).
+- **Postgres** — relational metadata. Tables: `users` (publisher identity, see migration 003), `assistant_chats` (chat index for the AI assistant), `page_versions` (snapshot index for edit/re-publish). All transcripts and page HTML still live in S3; Postgres holds only the queryable index rows. Assistant + versioning features are gated on `DATABASE_URL`; the `users` table is required whenever Google OAuth is on.
 
 When adding a new feature, ask: what's the durability/queryability story? Counters and rate limits → Redis. Bulk content and JSON indexes → S3. Anything you'd want to run SQL across (history, leaderboards, search) → Postgres. See `references/storage.md` for the full S3 key layout and rationale.
 
