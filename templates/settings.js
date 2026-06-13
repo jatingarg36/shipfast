@@ -69,7 +69,8 @@ function settingsHtml(user) {
 <body>
 <nav><div class="nav-inner">
   <div class="logo">S</div><div class="brand">Ship<span>fast</span></div>
-  <a href="/">&larr; Back to dashboard</a>
+  <a href="/changelog" style="margin-left:auto;margin-right:1rem">Changelog</a>
+  <a href="/" style="margin-left:0">&larr; Back to dashboard</a>
 </div></nav>
 
 <div class="wrap">
