@@ -195,21 +195,44 @@ function assistantLoaderJs() {
   document.body.appendChild(askBtn);
   var pendingSelection = "";
 
+  // Shows/hides/positions the "Ask AI about this" button for the current
+  // selection. Clamps horizontally so the button stays on-screen on narrow
+  // viewports.
+  function updateAskBtn() {
+    var sel = window.getSelection();
+    var text = sel ? sel.toString().trim() : "";
+    if (text.length >= 4 && text.length <= 4000 && sel.rangeCount) {
+      var rect = sel.getRangeAt(0).getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) { askBtn.style.display = "none"; return; }
+      pendingSelection = text;
+      var btnWidth = askBtn.offsetWidth || 140; // estimate before first paint
+      var maxLeft = window.scrollX + window.innerWidth - btnWidth - 8;
+      askBtn.style.left = Math.max(8, Math.min(rect.left + window.scrollX, maxLeft)) + "px";
+      askBtn.style.top = (rect.bottom + window.scrollY + 6) + "px";
+      askBtn.style.display = "block";
+    } else {
+      askBtn.style.display = "none";
+    }
+  }
+
+  // Desktop: selection finishes on mouseup.
   document.addEventListener("mouseup", function (e) {
     if (e.target === askBtn || (iframe && e.target === iframe)) return;
-    setTimeout(function () {
-      var sel = window.getSelection();
-      var text = sel ? sel.toString().trim() : "";
-      if (text.length >= 4 && text.length <= 4000 && sel.rangeCount) {
-        var rect = sel.getRangeAt(0).getBoundingClientRect();
-        pendingSelection = text;
-        askBtn.style.left = Math.max(8, rect.left + window.scrollX) + "px";
-        askBtn.style.top = (rect.bottom + window.scrollY + 6) + "px";
-        askBtn.style.display = "block";
-      } else {
-        askBtn.style.display = "none";
-      }
-    }, 0);
+    setTimeout(updateAskBtn, 0);
+  });
+
+  // Mobile: dragging the native selection handles doesn't fire mouseup, so
+  // fall back to selectionchange (debounced — it fires continuously while
+  // handles are dragged) and touchend (selection settles right after lift-off).
+  var selectionTimer = null;
+  function scheduleAskBtnUpdate() {
+    if (selectionTimer) clearTimeout(selectionTimer);
+    selectionTimer = setTimeout(updateAskBtn, 250);
+  }
+  document.addEventListener("selectionchange", scheduleAskBtnUpdate);
+  document.addEventListener("touchend", function (e) {
+    if (e.target === askBtn) return;
+    scheduleAskBtnUpdate();
   });
 
   askBtn.onclick = function () {
