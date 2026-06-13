@@ -1045,6 +1045,10 @@ kbd{
         </div>
         <div class="detected-type" id="detectedType"></div>
       </div>
+      <div class="field" id="versionLabelField" style="display:none">
+        <div class="field-head"><label for="versionLabel">Version label <span style="color:var(--muted2);font-weight:400">(optional)</span></label></div>
+        <input id="versionLabel" type="text" maxlength="80" placeholder="e.g. added pricing table" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem;color:var(--text);font-family:var(--sans);font-size:.85rem"/>
+      </div>
       <div class="modal-footer">
         <div class="modal-hint">
           <kbd>&#8984;</kbd><kbd>&#9166;</kbd> to publish
@@ -1092,6 +1096,18 @@ kbd{
     <div style="display:flex;gap:.5rem;justify-content:center">
       <button class="btn btn-ghost" onclick="cancelDelete()">Cancel</button>
       <button class="btn btn-delete-confirm" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- History (version list) modal -->
+<div class="modal-overlay" id="historyOverlay" onclick="if(event.target===this)closeHistory()">
+  <div class="modal" style="max-width:520px;padding:1.5rem">
+    <h3 style="font-size:1rem;font-weight:700;margin-bottom:.25rem">Version history</h3>
+    <p id="historySlugName" style="color:var(--muted);font-size:.78rem;margin-bottom:1rem;font-family:var(--mono)"></p>
+    <div id="historyList" style="max-height:60vh;overflow:auto;display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem"></div>
+    <div style="display:flex;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeHistory()">Close</button>
     </div>
   </div>
 </div>
@@ -1328,6 +1344,8 @@ function resetModalFields(){
   if(slugWarnEl){ slugWarnEl.remove(); slugWarnEl=null; }
   publishBtn.classList.remove('loading'); publishBtn.textContent='Publish';
   setAccessLevel('publisher');
+  const vl=document.getElementById('versionLabel'); if(vl) vl.value='';
+  const vlf=document.getElementById('versionLabelField'); if(vlf) vlf.style.display='none';
 }
 function resetModal(){
   resetModalFields();
@@ -1347,6 +1365,8 @@ async function editPage(e,slug){
   htmlInput.value=r.source;
   setAccessLevel(r.access||'public');
   htmlInput.dispatchEvent(new Event('input'));
+  // Show the optional version label field only when republishing
+  const vlf=document.getElementById('versionLabelField'); if(vlf) vlf.style.display='block';
   openModal(true);
 }
 
@@ -1359,7 +1379,7 @@ function togglePreview(){
 
 // ── Keyboard ──
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeModal();cancelDelete()}
+  if(e.key==='Escape'){closeModal();cancelDelete();closeHistory()}
   if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){
     const o=document.getElementById('modalOverlay');
     if(o.classList.contains('open')&&document.getElementById('modalStep1').style.display!=='none') publish();
@@ -1377,7 +1397,8 @@ async function publish(){
   if(!html) return showToast('Paste some code','err');
   publishBtn.classList.add('loading');publishBtn.textContent=editingSlug?'Updating':'Publishing';
   try{
-    const r=await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug,html,access:currentAccess})});
+    const versionLabel=editingSlug ? ((document.getElementById('versionLabel')||{}).value || '').trim() : '';
+    const r=await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug,html,access:currentAccess,versionLabel})});
     const d=await r.json();
     if(d.ok){
       document.getElementById('modalStep1').style.display='none';
@@ -1403,6 +1424,74 @@ function copyPageUrl(e,slug){
     const b=e.currentTarget;b.classList.add('copied');b.innerHTML='\\u2713 Copied';
     setTimeout(()=>{b.classList.remove('copied');b.innerHTML=copySvg+' Copy URL'},1500);
   });
+}
+
+// ── Version history ──
+let historySlug = null;
+function fmtVersionTime(iso){
+  try{ const d=new Date(iso); return d.toLocaleString(); }catch(e){ return iso||''; }
+}
+async function openHistory(e, slug){
+  e.stopPropagation(); e.preventDefault();
+  historySlug = slug;
+  document.getElementById('historySlugName').textContent='/p/'+slug;
+  const listEl = document.getElementById('historyList');
+  listEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:1rem;text-align:center">Loading…</div>';
+  document.getElementById('historyOverlay').classList.add('open');
+  try{
+    const r = await fetch('/api/pages/'+slug+'/versions').then(r=>r.json());
+    renderHistory(slug, r.versions||[]);
+  }catch(err){
+    listEl.innerHTML = '<div style="color:var(--danger);font-size:.82rem;padding:1rem;text-align:center">Failed to load history</div>';
+  }
+}
+function closeHistory(){
+  document.getElementById('historyOverlay').classList.remove('open');
+  historySlug = null;
+}
+function renderHistory(slug, versions){
+  const listEl = document.getElementById('historyList');
+  if(!versions.length){
+    listEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:1rem;text-align:center">No previous versions yet. Republish this page to start building history.</div>';
+    return;
+  }
+  listEl.innerHTML = versions.map(v => (
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.7rem .85rem;border:1px solid var(--border);border-radius:8px;background:var(--surface2)">'
+      + '<div style="min-width:0;flex:1">'
+        + '<div style="font-weight:600;font-size:.82rem;color:var(--text)">v' + v.n + (v.label ? ' — ' + esc(v.label) : '') + '</div>'
+        + '<div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">' + esc(fmtVersionTime(v.createdAt)) + '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:.4rem;flex-shrink:0">'
+        + '<button class="btn-link" type="button" onclick="previewVersion(&apos;' + slug + '&apos;,' + v.n + ')">Preview</button>'
+        + '<button class="btn-link" type="button" onclick="restoreVersion(&apos;' + slug + '&apos;,' + v.n + ')">Restore</button>'
+      + '</div>'
+    + '</div>'
+  )).join('');
+}
+async function previewVersion(slug, n){
+  try{
+    const r = await fetch('/api/pages/'+slug+'/versions/'+n).then(r=>r.json());
+    if(!r || typeof r.content !== 'string'){ showToast('Could not load preview','err'); return; }
+    const w = window.open('', '_blank');
+    if(w){ w.document.open(); w.document.write(r.content); w.document.close(); }
+    else { showToast('Pop-up blocked','err'); }
+  }catch(err){ showToast('Preview failed','err'); }
+}
+async function restoreVersion(slug, n){
+  if(!confirm('Restore v'+n+'? The current live content will be saved as a new version first.')) return;
+  try{
+    const r = await fetch('/api/pages/'+slug+'/versions/'+n+'/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const d = await r.json();
+    if(d && d.ok){
+      showToast('Restored v'+n,'ok');
+      // Refresh the history list & page cards
+      const fresh = await fetch('/api/pages/'+slug+'/versions').then(r=>r.json());
+      renderHistory(slug, fresh.versions||[]);
+      loadPages();
+    } else {
+      showToast((d && d.error) || 'Restore failed','err');
+    }
+  }catch(err){ showToast('Restore failed','err'); }
 }
 
 // ── Delete with undo ──
@@ -1479,6 +1568,7 @@ function renderPageCardHtml(p) {
       '<span class="meta">' + eyeSvg + ' ' + fmtViews(p.views || 0) + '</span>' +
       '<span class="act">' +
         (mine ? '<button type="button" class="btn-link" onclick="editPage(event,&apos;' + p.slug + '&apos;)">' + editSvg + ' Edit</button>' : '') +
+        (mine ? '<button type="button" class="btn-link" onclick="openHistory(event,&apos;' + p.slug + '&apos;)" title="Version history">&#128337; History</button>' : '') +
         '<button type="button" class="btn-link" onclick="copyPageUrl(event,&apos;' + p.slug + '&apos;)">' + copySvg + ' Copy URL</button>' +
         (mine ? '<button type="button" class="btn-link danger" onclick="deletePage(event,&apos;' + p.slug + '&apos;)">Delete</button>' : '') +
       '</span>' +
