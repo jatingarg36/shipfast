@@ -1,5 +1,6 @@
 const s3Service = require("./s3");
 const userService = require("./user");
+const tagsService = require("./tags");
 
 /**
  * PageService - Handles page metadata operations
@@ -106,9 +107,41 @@ async function listPages() {
       owner: pm.owner || "admin",
       ownerName: ownerName,
       updated: pm.updated || pm.createdAt || new Date(0).toISOString(),
+      tags: Array.isArray(pm.tags) ? pm.tags : [],
     });
   }
   return pages.sort((a, b) => new Date(b.updated) - new Date(a.updated));
+}
+
+/**
+ * Replace the tag list for a page. Validates first, then merges into metadata.
+ * @param {string} slug - Page slug
+ * @param {*} tags - Candidate tag list (validated via tagsService)
+ * @returns {Promise<{ ok: true, tags: string[] } | { ok: false, error: object }>}
+ */
+async function setPageTags(slug, tags) {
+  const result = tagsService.validateTags(tags);
+  if (!result.ok) return result;
+  await setPageMeta(slug, { tags: result.tags });
+  return { ok: true, tags: result.tags };
+}
+
+/**
+ * Filter a list of pages to those containing ALL of the given tags.
+ * Matching is case-insensitive; multiple tags are AND-ed.
+ * @param {Array} pages - Pages (each with a `tags` array)
+ * @param {string[]} tags - Tags to require
+ * @returns {Array} - Filtered pages
+ */
+function filterPagesByTags(pages, tags) {
+  const wanted = (Array.isArray(tags) ? tags : [tags])
+    .filter(Boolean)
+    .map((t) => String(t).toLowerCase());
+  if (!wanted.length) return pages;
+  return pages.filter((p) => {
+    const have = (p.tags || []).map((t) => t.toLowerCase());
+    return wanted.every((w) => have.includes(w));
+  });
 }
 
 module.exports = {
@@ -119,4 +152,6 @@ module.exports = {
   deletePageMeta,
   getAccess,
   listPages,
+  setPageTags,
+  filterPagesByTags,
 };

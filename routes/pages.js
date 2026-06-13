@@ -26,6 +26,46 @@ function formatViews(n) {
 }
 
 /**
+ * Minimal HTML-attribute/text escaping for injected, server-rendered content.
+ * @param {string} s
+ * @returns {string}
+ */
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+/**
+ * Build a small, crawlable row of tag chips for a rendered page.
+ * Each chip is a plain <a> to /?tag=<value> so crawlers can follow it.
+ * @param {string[]} tags
+ * @returns {string} HTML (empty string when there are no tags)
+ */
+function tagChipsHtml(tags) {
+  if (!Array.isArray(tags) || tags.length === 0) return "";
+  const chips = tags
+    .map((t) => {
+      const safe = escapeHtml(t);
+      return `<a href="/?tag=${encodeURIComponent(t)}" style="
+        font:600 11px Inter,system-ui,sans-serif;color:#fb923c;text-decoration:none;
+        background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.2);
+        border-radius:999px;padding:3px 10px;line-height:1.4;white-space:nowrap;
+        transition:background .15s" rel="tag"
+        onmouseover="this.style.background='rgba(249,115,22,.16)'"
+        onmouseout="this.style.background='rgba(249,115,22,.08)'"
+      >${safe}</a>`;
+    })
+    .join("");
+  return `<div style="position:fixed;bottom:12px;left:12px;z-index:99999;
+    display:flex;gap:6px;flex-wrap:wrap;align-items:center;max-width:60vw"
+    aria-label="Tags">${chips}</div>`;
+}
+
+/**
  * GET /p/:slug
  * Serve a published page
  * Enforces access control (publisher pages require authentication)
@@ -34,7 +74,8 @@ router.get("/p/:slug(*)", async (req, res) => {
   const html = await s3Service.getText(`pages/${req.params.slug}.html`);
   if (html === null) return res.status(404).send(notFoundHtml());
 
-  const access = await pageService.getAccess(req.params.slug);
+  const pageMeta = await pageService.getPageMeta(req.params.slug);
+  const access = pageMeta.access || "publisher";
   if (access === "publisher" && !authMiddleware.getCurrentUser(req)) {
     return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
   }
@@ -88,7 +129,9 @@ router.get("/p/:slug(*)", async (req, res) => {
   // — page is still scrollable, just no visible scrollbar gutter.
   const scrollbarHider = '<style>html,body{scrollbar-width:none;-ms-overflow-style:none}html::-webkit-scrollbar,body::-webkit-scrollbar{width:0;height:0;display:none}</style>';
 
-  const inject = scrollbarHider + badge + assistantTag;
+  const tagsBar = tagChipsHtml(pageMeta.tags);
+
+  const inject = scrollbarHider + badge + tagsBar + assistantTag;
   const lastBodyIdx = html.lastIndexOf("</body>");
   const finalHtml =
     lastBodyIdx === -1
