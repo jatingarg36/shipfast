@@ -39,21 +39,21 @@ If you ever add a third provider (GitHub, etc.), use a similar prefix scheme (`g
 Each page in `meta.json` has an `access` field:
 
 - `"public"` — anyone can `GET /p/:slug` without logging in.
-- `"publisher"` — must be authenticated (any role). Unauthenticated viewers get redirected to `/login?next=…`.
+- `"publisher"` — private to the page's **owner** (and admin). Anonymous viewers are redirected to `/login?next=…` (so an owner following their own share link can authenticate); authenticated non-owners get a `404` so the page's existence isn't leaked.
 
-Pages default to `"publisher"` if `meta.json` doesn't say otherwise. There's also a legacy shape where `meta[slug]` is a bare string (the access level); `pageService.getPageMeta` normalizes that to `{ access, owner: "admin" }`.
+Pages default to `"publisher"` if `meta.json` doesn't say otherwise. There's also a legacy shape where `meta[slug]` is a bare string (the access level); `pageService.getPageMeta` normalizes that to `{ access, owner: "admin" }` (so a legacy publisher page is admin-only until re-saved with a real owner).
 
 Two things to note:
 
-1. There's no third level (no "unlisted" or "password-protected per page"). The fork/expiry/shared-publish feature specs in `features/` may add these — read those specs before adding new levels.
-2. "Publisher" means "any logged-in user can read", not "the page owner". Ownership is separate (see below).
+1. There's no third level (no "unlisted", "team-visible", or "password-protected per page"). The fork/expiry/shared-publish feature specs in `features/` may add these — read those specs before adding new levels. In particular, "logged-in users can all read this" is **not** a level the system offers; `publisher` is owner-scoped.
+2. `publisher` access and ownership are the same scope on the read path: a `publisher` page is readable only by its owner or admin. This is enforced in `routes/pages.js` (page serving) and mirrored by `GET /api/pages` (listing) — keep the two in lockstep, since a divergence is exactly the access-layer bug where a page is hidden from someone's dashboard yet still reachable by URL.
 
 ## The matrix
 
 | Viewer        | `public` page          | `publisher` page                    | Manage (`PATCH`/`DELETE`)        |
 | ------------- | ---------------------- | ----------------------------------- | -------------------------------- |
 | Anonymous     | Can view               | Redirected to `/login`              | 401                              |
-| Publisher (not owner) | Can view       | Can view                            | 403 ("only your own pages")      |
+| Publisher (not owner) | Can view       | **404 (not theirs)**                | 403 ("only your own pages")      |
 | Publisher (owner) | Can view           | Can view                            | Allowed                          |
 | Admin         | Can view               | Can view                            | Allowed (any page)               |
 

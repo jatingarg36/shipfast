@@ -76,8 +76,21 @@ router.get("/p/:slug(*)", async (req, res) => {
 
   const pageMeta = await pageService.getPageMeta(req.params.slug);
   const access = pageMeta.access || "publisher";
-  if (access === "publisher" && !authMiddleware.getCurrentUser(req)) {
-    return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
+  if (access === "publisher") {
+    // A publisher page is private to its owner (and admin) — the same scope the
+    // dashboard listing enforces. Authentication alone is NOT enough; otherwise
+    // any logged-in user could open another publisher's page by URL, which
+    // contradicts what the listing shows them. Anonymous viewers are sent to
+    // login (so an owner following their own share link can authenticate);
+    // authenticated non-owners get a 404 so the page's existence isn't leaked.
+    const user = authMiddleware.getCurrentUser(req);
+    if (!user) {
+      return res.redirect("/login?next=" + encodeURIComponent(req.originalUrl));
+    }
+    const isOwnerOrAdmin = user.role === "admin" || pageMeta.owner === user.id;
+    if (!isOwnerOrAdmin) {
+      return res.status(404).send(notFoundHtml());
+    }
   }
 
   // Fire-and-forget: increment view counter (non-blocking, bot-filtered)
