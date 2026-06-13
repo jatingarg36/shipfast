@@ -76,10 +76,10 @@ When adding a new feature, ask: what's the durability/queryability story? Counte
 Two auth surfaces, two access levels. They compose, and getting the combination wrong is the most common security bug.
 
 - Two **identities**: password login → `{ id: "admin", role: "admin" }`; Google OAuth → `{ id: "google-{profileId}", role: "publisher" }`. `admin` can manage every page; publishers can only manage their own.
-- Two page **access levels**: `public` (anyone with the URL) and `publisher` (must be logged in). Stored in `meta.json` per slug, default `publisher`.
+- Two page **access levels**: `public` (anyone with the URL) and `publisher` (private to the page's owner + admin). Stored in `meta.json` per slug, default `publisher`. Note `publisher` is owner-scoped, *not* "any logged-in user" — that distinction is a recurring source of access bugs.
 - Listing endpoint `GET /api/pages` filters by viewer: anon → public only; publisher → own + public; admin → all. This rule is the single helper `pageService.visiblePages(pages, user)` — reuse it instead of re-deriving the filter.
 - `GET /api/tags` (the dashboard grouping rail) MUST mirror that same visibility, or publisher-gated tags leak into the public view. It does: anon counts come from the DB `public_count`, admin from the total, and a publisher's "public + own" count is derived through `visiblePages`. The DB keeps `public_count` and `publisher_count` separate precisely so the anon view never includes gated pages.
-- `routes/pages.js` redirects unauthenticated viewers of `publisher` pages to `/login?next=…` — don't change that without thinking about share links.
+- `routes/pages.js` enforces the *read* side of that scope: serving a `publisher` page requires the viewer to be the owner or admin (anon → `/login` redirect so an owner can authenticate via a share link; authenticated non-owner → `404`). Page serving and the listing must stay in lockstep — if `/p/:slug` lets someone read a page the listing hides from them, that's the access-layer break.
 
 Use the helpers in `middleware/auth.js`: `requireAuth` for "must be logged in", `requirePageOwner` for "must own this slug (or be admin)", `canManagePage(req, slug)` when you need an `if`. Don't write your own session check; you'll miss the API-vs-HTML 401-vs-redirect branch.
 

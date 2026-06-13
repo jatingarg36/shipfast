@@ -7,6 +7,13 @@ A `Tag:` line (`feature`, `improvement`, `fix`, or `security`) classifies the
 release, and `-` bullets list the user-facing changes. This file is parsed and
 rendered at `/changelog` by `services/changelog.js`.
 
+## v1.6.1 — 2026-06-13 — Fix: publisher pages are owner-private
+
+Tag: security
+
+- A `publisher`-access page is now readable only by its owner (and admin). Previously any logged-in user could open another publisher's page by its URL, even though it never appeared in their dashboard — page serving now matches the listing's scope.
+- Authenticated non-owners get a `404` (existence not leaked); anonymous viewers are still sent to login so an owner can authenticate via a share link.
+
 ## v1.6.0 — 2026-06-13 — Page tags
 
 Tag: feature
