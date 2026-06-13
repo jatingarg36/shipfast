@@ -63,6 +63,8 @@ Two things to note:
 - Publisher → own pages (any access) + all `public` pages.
 - Admin → all pages.
 
+This filter is one function — `pageService.visiblePages(pages, user)` — deliberately shared so anything that lists or counts pages stays consistent. `GET /api/tags` (the dashboard grouping rail) reuses it: a tag's count must equal the number of pages the viewer can actually see, or a publisher-gated page would leak a tag into the anonymous view. For anon and admin the count comes straight from the DB index (`public_count` and the total, respectively — kept in separate columns precisely so the public number excludes gated pages); a publisher's "public + own" count is derived through `visiblePages` because per-owner counts aren't materialized in the index. If you add another surface that aggregates pages (a sitemap, a search index, an RSS feed), route it through `visiblePages` too rather than re-deriving the predicate.
+
 ## The helpers — semantics in detail
 
 All five live in `middleware/auth.js`. Use them; don't reimplement.

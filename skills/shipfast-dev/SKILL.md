@@ -1,6 +1,6 @@
 ---
 name: shipfast-dev
-description: Navigate and contribute to the ShipFast codebase — a Node/Express PaaS for publishing HTML/JSX/Markdown pages built by Claude. Use this skill whenever the user is working in the ShipFast repo: adding endpoints, services, middleware, templates, or features; touching pages/, routes/, services/, middleware/, templates/, config.js, or server.js; debugging auth, S3, Redis, view counts, or the AI assistant; reading feature specs in features/; or asking architectural questions about the project. Trigger even when the user does not explicitly say "ShipFast" — the cue is files like services/page.js, routes/api.js, the meta.json layout, or talk of slugs, publishers, public/publisher access, the assistant widget, or the fork/views/expiry features.
+description: Navigate and contribute to the ShipFast codebase — a Node/Express PaaS for publishing HTML/JSX/Markdown pages built by Claude. Use this skill whenever the user is working in the ShipFast repo: adding endpoints, services, middleware, templates, or features; touching pages/, routes/, services/, middleware/, templates/, config.js, or server.js; debugging auth, S3, Redis, view counts, page tags, or the AI assistant; reading feature specs in features/; or asking architectural questions about the project. Trigger even when the user does not explicitly say "ShipFast" — the cue is files like services/page.js, routes/api.js, the meta.json layout, or talk of slugs, publishers, public/publisher access, page tags, the assistant widget, or the fork/views/expiry features.
 ---
 
 # ShipFast Developer Skill
@@ -14,7 +14,7 @@ This file is the map. For deep dives (auth/access rules, S3 key layout, content-
 Use it whenever the user is working in the ShipFast repo. Concrete cues:
 
 - They opened, mentioned, or are editing anything under `services/`, `routes/`, `middleware/`, `templates/`, `pages/`, or `features/`.
-- They reference ShipFast concepts: slugs, publisher vs public access, the `/p/:slug` route, the dashboard, the floating assistant pill, view counts, fork/remix.
+- They reference ShipFast concepts: slugs, publisher vs public access, the `/p/:slug` route, the dashboard, the floating assistant pill, view counts, page tags, fork/remix.
 - They ask "where does X live" or "how do I add an endpoint / a new content type / a new auth provider".
 - They paste an error from `server.js`, Redis, S3, or Passport.
 
@@ -29,9 +29,11 @@ config.js              env loading + validation (SESSION_SECRET, REDIS_URL, S3_B
 services/              pure business logic — no Express, no req/res
   s3.js                S3 wrapper: getText/putText/deleteObject/list
   user.js              Postgres users table (readUsers/writeUsers/upsertUser/getDisplayName)
-  page.js              meta.json on S3 (listPages/getPageMeta/setPageMeta/deletePageMeta/getAccess)
+  page.js              meta.json on S3 (listPages/getPageMeta/setPageMeta/deletePageMeta/getAccess/setPageTags/filterPagesByTags/visiblePages)
   content.js           detectType(html|jsx|md) + wrapJsx + wrapMarkdown
   views.js             Redis view counters (incrementView/getViewCount/getViewCounts/isBot)
+  tags.js              pure tag policy: validateTags (PascalCase, ≤3, reserved) + countTags ordering
+  tags-store.js        Postgres tag index — per-access doc counts (lazy pool, schema bootstrap)
   chat-db.js           Postgres assistant_chats table (lazy pool, schema bootstrap, ownership-scoped queries)
   chat-store.js        S3-backed chat transcripts (server-built keys, message validation)
 
@@ -40,7 +42,7 @@ middleware/
 
 routes/                Express routers — thin glue, no business logic
   auth.js              /login, /api/login, /api/logout, /auth/google[/callback]
-  api.js               /api/pages CRUD, /api/pages/:slug/{raw,exists,access}, /api/views/:slug
+  api.js               /api/pages CRUD, /api/pages/:slug/{raw,exists,access,tags}, /api/tags, /api/views/:slug
   pages.js             GET /p/:slug — serves pages, enforces access, injects badge + assistant tag
   settings.js          GET /settings (shell only; assistant key stays client-side)
   assistant.js         /assistant.js loader, /assistant/panel, /api/assistant/chats*
@@ -57,7 +59,7 @@ features/              markdown specs for in-flight features (versioning, fork, 
 tests/                 node --test runner; tests/views.test.js is the shape to follow
 ```
 
-The big rule: **routes consume services, services consume `services/s3.js` or the shared `services/pg.js` pool — never the AWS SDK or `pg` directly**. If you find yourself importing `@aws-sdk/client-s3` outside `services/s3.js`, or constructing a `pg` `Pool` outside `services/pg.js`, you're about to violate the layering. The current Postgres-touching services are `services/user.js`, `services/chat-db.js`, and `services/versions.js`; each takes its pool from `pg.getPool()`.
+The big rule: **routes consume services, services consume `services/s3.js` or the shared `services/pg.js` pool — never the AWS SDK or `pg` directly**. If you find yourself importing `@aws-sdk/client-s3` outside `services/s3.js`, or constructing a `pg` `Pool` outside `services/pg.js`, you're about to violate the layering. The current Postgres-touching services are `services/user.js`, `services/chat-db.js`, `services/versions.js`, and `services/tags-store.js`; each takes its pool from `pg.getPool()`.
 
 ## How storage is split
 
@@ -65,7 +67,7 @@ There are three stores and each owns a specific kind of data. Mixing them is the
 
 - **S3** — durable content + JSON blobs. Keys you'll see: `pages/{slug}.html`, `meta.json` (page metadata index), `chats/{userId}/{slug}/{chatId}.json` (assistant transcripts). Everything user-visible lives here.
 - **Redis** — counters and sessions. View counters under `shipfast:views:{slug}`; Express session store via `connect-redis`. Treat Redis as ephemeral: never make page serving block on it (see `routes/pages.js` — view increment is fire-and-forget).
-- **Postgres** — relational metadata. Tables: `users` (publisher identity, see migration 003), `assistant_chats` (chat index for the AI assistant), `page_versions` (snapshot index for edit/re-publish). All transcripts and page HTML still live in S3; Postgres holds only the queryable index rows. Assistant + versioning features are gated on `DATABASE_URL`; the `users` table is required whenever Google OAuth is on.
+- **Postgres** — relational metadata. Tables: `users` (publisher identity, see migration 003), `assistant_chats` (chat index for the AI assistant), `page_versions` (snapshot index for edit/re-publish), `tags` + `page_tags` (tag index with maintained per-access doc counts, migration 004). All transcripts and page HTML still live in S3; Postgres holds only the queryable index rows. Assistant, versioning, and the tag index are gated on `DATABASE_URL` (each degrades gracefully when it's unset); the `users` table is required whenever Google OAuth is on.
 
 When adding a new feature, ask: what's the durability/queryability story? Counters and rate limits → Redis. Bulk content and JSON indexes → S3. Anything you'd want to run SQL across (history, leaderboards, search) → Postgres. See `references/storage.md` for the full S3 key layout and rationale.
 
@@ -75,7 +77,8 @@ Two auth surfaces, two access levels. They compose, and getting the combination 
 
 - Two **identities**: password login → `{ id: "admin", role: "admin" }`; Google OAuth → `{ id: "google-{profileId}", role: "publisher" }`. `admin` can manage every page; publishers can only manage their own.
 - Two page **access levels**: `public` (anyone with the URL) and `publisher` (must be logged in). Stored in `meta.json` per slug, default `publisher`.
-- Listing endpoint `GET /api/pages` filters by viewer: anon → public only; publisher → own + public; admin → all. The dashboard depends on this.
+- Listing endpoint `GET /api/pages` filters by viewer: anon → public only; publisher → own + public; admin → all. This rule is the single helper `pageService.visiblePages(pages, user)` — reuse it instead of re-deriving the filter.
+- `GET /api/tags` (the dashboard grouping rail) MUST mirror that same visibility, or publisher-gated tags leak into the public view. It does: anon counts come from the DB `public_count`, admin from the total, and a publisher's "public + own" count is derived through `visiblePages`. The DB keeps `public_count` and `publisher_count` separate precisely so the anon view never includes gated pages.
 - `routes/pages.js` redirects unauthenticated viewers of `publisher` pages to `/login?next=…` — don't change that without thinking about share links.
 
 Use the helpers in `middleware/auth.js`: `requireAuth` for "must be logged in", `requirePageOwner` for "must own this slug (or be admin)", `canManagePage(req, slug)` when you need an `if`. Don't write your own session check; you'll miss the API-vs-HTML 401-vs-redirect branch.
