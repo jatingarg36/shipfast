@@ -114,10 +114,13 @@ router.post("/pages", authMiddleware.requireAuth, async (req, res) => {
 
   if (description.length > 150) description = description.slice(0, 147) + "...";
 
-  // Snapshot the previous live content as a version (only when overwriting an
-  // existing page — initial publish creates no version). Failures here must
-  // never block the new publish from going live.
-  if (existing && existingRaw) {
+  // Snapshot the previous live content as a version — but only when the
+  // body actually changed. Re-saves that don't touch the content (e.g. the
+  // user re-opened the edit modal just to flip the access level and hit
+  // Update) would otherwise create duplicate, byte-identical history rows.
+  // Failures must never block the new publish from going live.
+  const contentChanged = existing && existingRaw && existingRaw !== content;
+  if (contentChanged) {
     try {
       const prevMeta = await pageService.getPageMeta(slug);
       await versionsService.snapshotCurrent(
@@ -131,8 +134,10 @@ router.post("/pages", authMiddleware.requireAuth, async (req, res) => {
     }
   }
 
-  // Save content to S3
-  await s3Service.putText(`pages/${slug}.html`, content);
+  // Save content to S3 (skip the round-trip if it's identical)
+  if (!existing || existingRaw !== content) {
+    await s3Service.putText(`pages/${slug}.html`, content);
+  }
 
   // Update metadata
   const updates = {
@@ -244,11 +249,24 @@ router.delete("/pages/:slug(*)", authMiddleware.requirePageOwner, async (req, re
 });
 
 /**
+ * Middleware: 503 when versioning isn't configured (no DATABASE_URL).
+ */
+function requireVersioning(req, res, next) {
+  if (!versionsService.isEnabled()) {
+    return res
+      .status(503)
+      .json({ error: "Version history is not configured on this server" });
+  }
+  next();
+}
+
+/**
  * GET /api/pages/:slug/versions
  * List historical versions (owner or admin only). Newest first.
  */
 router.get(
   "/pages/:slug(*)/versions",
+  requireVersioning,
   authMiddleware.requirePageOwner,
   async (req, res) => {
     const versions = await versionsService.listVersions(req.params.slug);
@@ -270,6 +288,7 @@ router.get(
  */
 router.get(
   "/pages/:slug(*)/versions/:n(\\d+)",
+  requireVersioning,
   authMiddleware.requirePageOwner,
   async (req, res) => {
     const n = parseInt(req.params.n, 10);
@@ -288,6 +307,7 @@ router.get(
  */
 router.post(
   "/pages/:slug(*)/versions/:n(\\d+)/restore",
+  requireVersioning,
   authMiddleware.requirePageOwner,
   async (req, res) => {
     const slug = req.params.slug;
