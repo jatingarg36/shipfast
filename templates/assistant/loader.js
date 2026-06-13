@@ -2,7 +2,7 @@
  * Assistant Loader
  * Single Responsibility: the script injected into /p/:slug that wires up the
  * AI pill, the panel iframe, text-selection affordance, page-context bridge,
- * and the side-by-side layout that pushes page content rather than overlaying.
+ * and the responsive layout (push / overlay / mobile drawer) for the panel.
  *
  * Layout model
  * ------------
@@ -12,6 +12,12 @@
  *
  * On narrow viewports we fall back to the original overlay behavior so the
  * panel doesn't crush mobile layouts.
+ *
+ * On mobile viewports (<= MOBILE_MAX_WIDTH) the panel becomes a full-width
+ * slide-in drawer — like a mobile nav drawer, but it holds the AI chat
+ * instead of navigation. It overlays the page behind a dimmed backdrop,
+ * locks background scrolling while open, and tapping the backdrop (or the
+ * panel's own close button) closes it.
  */
 
 /** @returns {string} JS source served as `/assistant.js` */
@@ -29,7 +35,10 @@ function assistantLoaderJs() {
   // ── Layout constants ─────────────────────────────────────────────────────
   var PANEL_WIDTH = 400;             // px — panel width on wide viewports
   var LAYOUT_PUSH_MIN_WIDTH = 900;   // below this, we overlay instead of push
+  var MOBILE_MAX_WIDTH = 640;        // px — at/below this, panel is a full-width drawer
   var TRANSITION_MS = 260;
+
+  function isMobile() { return window.innerWidth <= MOBILE_MAX_WIDTH; }
 
   // ── Page context extraction (capped ~8K chars) ──────────────────────────
   function pageText() {
@@ -41,18 +50,22 @@ function assistantLoaderJs() {
     return text;
   }
 
-  // ── Layout controller (push vs overlay) ──────────────────────────────────
-  // Stashes the original body inline styles so we can restore them on close,
-  // even if the host page set its own padding-right.
+  // ── Body style snapshot (so we can restore exactly what was there) ───────
   var originalBodyStyles = null;
-  function pushOpen() {
+  function captureBodyStyles() {
     if (originalBodyStyles === null) {
       originalBodyStyles = {
         paddingRight: document.body.style.paddingRight || "",
         transition: document.body.style.transition || "",
         boxSizing: document.body.style.boxSizing || "",
+        overflow: document.body.style.overflow || "",
       };
     }
+  }
+
+  // ── Layout controller (push vs overlay vs mobile drawer) ──────────────────
+  function pushOpen() {
+    captureBodyStyles();
     if (window.innerWidth >= LAYOUT_PUSH_MIN_WIDTH) {
       document.body.style.boxSizing = "border-box";
       document.body.style.transition = "padding-right " + TRANSITION_MS + "ms ease";
@@ -71,22 +84,51 @@ function assistantLoaderJs() {
       }, TRANSITION_MS);
     }
   }
+  // Mobile drawer locks background scroll instead of pushing layout.
+  function lockScroll() {
+    captureBodyStyles();
+    document.body.style.overflow = "hidden";
+  }
+  function unlockScroll() {
+    if (originalBodyStyles) document.body.style.overflow = originalBodyStyles.overflow;
+  }
 
-  // If the viewport crosses the threshold while the panel is open, switch modes.
+  function setBackdrop(visible) {
+    backdrop.style.opacity = visible ? "1" : "0";
+    backdrop.style.pointerEvents = visible ? "auto" : "none";
+  }
+
+  // If the viewport crosses the mobile breakpoint while the panel is open
+  // (e.g. orientation change), switch layout modes in place.
   window.addEventListener("resize", function () {
     if (!panelOpen) return;
-    if (window.innerWidth >= LAYOUT_PUSH_MIN_WIDTH) {
-      document.body.style.paddingRight = PANEL_WIDTH + "px";
+    iframe.style.width = iframeWidth() + "px";
+    if (isMobile()) {
+      pushClose();
+      lockScroll();
+      setBackdrop(true);
     } else {
-      document.body.style.paddingRight = (originalBodyStyles && originalBodyStyles.paddingRight) || "";
+      unlockScroll();
+      setBackdrop(false);
+      pushOpen();
     }
   });
+
+  // ── Mobile drawer backdrop ─────────────────────────────────────────────────
+  var backdrop = document.createElement("div");
+  backdrop.setAttribute("data-sf-ai", "1");
+  backdrop.style.cssText = "position:fixed;top:0;right:0;bottom:0;left:0;" +
+    "z-index:2147482998;background:rgba(0,0,0,.5);opacity:0;pointer-events:none;" +
+    "transition:opacity " + TRANSITION_MS + "ms ease";
+  backdrop.onclick = function () { closePanel(); };
+  document.body.appendChild(backdrop);
 
   // ── Panel iframe ─────────────────────────────────────────────────────────
   var iframe = null;
   var panelOpen = false;
 
   function iframeWidth() {
+    if (isMobile()) return window.innerWidth;
     return Math.min(PANEL_WIDTH, window.innerWidth);
   }
 
@@ -96,7 +138,7 @@ function assistantLoaderJs() {
     iframe.src = "/assistant/panel?slug=" + encodeURIComponent(SLUG);
     iframe.setAttribute("data-sf-ai", "1");
     iframe.setAttribute("sandbox", "allow-scripts allow-same-origin allow-forms allow-top-navigation-by-user-activation");
-    iframe.style.cssText = "position:fixed;top:0;right:0;height:100vh;" +
+    iframe.style.cssText = "position:fixed;top:0;right:0;height:100vh;height:100dvh;" +
       "width:" + iframeWidth() + "px;max-width:100vw;" +
       "border:none;border-left:1px solid rgba(255,255,255,.1);z-index:2147483000;" +
       "box-shadow:-12px 0 36px rgba(0,0,0,.5);background:#0c0a09;" +
@@ -107,9 +149,14 @@ function assistantLoaderJs() {
 
   function openPanel() {
     ensureIframe();
-    pushOpen();
+    iframe.style.width = iframeWidth() + "px";
+    if (isMobile()) {
+      lockScroll();
+      setBackdrop(true);
+    } else {
+      pushOpen();
+    }
     requestAnimationFrame(function () {
-      iframe.style.width = iframeWidth() + "px";
       iframe.style.transform = "translateX(0)";
     });
     panelOpen = true;
@@ -118,6 +165,8 @@ function assistantLoaderJs() {
 
   function closePanel() {
     if (iframe) iframe.style.transform = "translateX(100%)";
+    setBackdrop(false);
+    unlockScroll();
     pushClose();
     panelOpen = false;
     pill.style.display = "flex";
@@ -127,7 +176,7 @@ function assistantLoaderJs() {
   var pill = document.createElement("button");
   pill.setAttribute("data-sf-ai", "1");
   pill.innerHTML = "&#10024; AI";
-  pill.style.cssText = "position:fixed;bottom:52px;right:12px;z-index:2147482999;" +
+  pill.style.cssText = "position:fixed;bottom:calc(52px + env(safe-area-inset-bottom));right:12px;z-index:2147482999;" +
     "background:rgba(12,10,9,.92);border:1px solid rgba(251,146,60,.35);cursor:pointer;" +
     "border-radius:8px;padding:6px 12px;font:600 11px Inter,system-ui,sans-serif;" +
     "color:#fb923c;display:flex;align-items:center;gap:4px;opacity:.85";

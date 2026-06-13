@@ -31,6 +31,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  height: 100dvh; /* tracks the visual viewport on mobile (keyboard, browser chrome) */
 }
 
 /* ── Header ───────────────────────────────────────────────────────────── */
@@ -311,3 +312,17 @@ body {
 }
 .sf-send:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239,68,68,.3); }
 .sf-send:disabled { opacity: .45; cursor: default; transform: none; box-shadow: none; }
+
+/* ── Mobile drawer ───────────────────────────────────────────────────────
+ * Below this width the host page (loader.js) presents the panel as a
+ * full-width slide-in drawer rather than a side column. Bump touch targets
+ * and account for safe-area insets (notches / home indicator).
+ */
+@media (max-width: 640px) {
+  .sf-header { padding: .85rem .9rem .7rem; }
+  .sf-iconbtn { padding: .55rem .7rem; font-size: .95rem; }
+  .sf-select { padding: .55rem .65rem; font-size: .82rem; }
+  .sf-input { min-height: 48px; }
+  .sf-send { padding: .6rem 1.05rem; font-size: .85rem; }
+  .sf-composer { padding: .75rem .9rem calc(1rem + env(safe-area-inset-bottom)); }
+}
