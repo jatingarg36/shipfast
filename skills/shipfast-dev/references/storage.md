@@ -10,8 +10,9 @@ Bucket name from `config.S3_BUCKET`. All keys are flat strings (no leading slash
 | ------------------------------------ | -------------------- | ------------------------------------------------------------- |
 | `pages/{slug}.html`                  | `routes/api.js`      | The served HTML for a page. Already wrapped if jsx/md.        |
 | `meta.json`                          | `services/page.js`   | Object keyed by slug: `{ title, description, type, access, owner, createdAt, updated }` per page. |
-| `users.json`                         | `services/user.js`   | Object keyed by user id: `{ id, displayName, email, avatar, role, createdAt, lastLogin }` per user. |
 | `chats/{userId}/{slug}/{chatId}.json`| `services/chat-store.js` | Full assistant chat transcript: `{ chatId, messages: [{role, content, selection?, ts}] }`. Server-built keys only. |
+
+> Historical note: there used to be a `users.json` blob here too — the publisher identity index. That moved to Postgres (`users` table, see migration 003). `scripts/backfill-users-from-s3.js` is the one-shot migrator for older deployments.
 
 A few things worth knowing:
 
@@ -38,13 +39,29 @@ Why Redis for view counts and not Postgres? Atomic `INCR`, no schema, and the da
 
 Adding new counters (fork count, like count, etc.)? Prefix the key with `shipfast:` and add it to `services/views.js` or a sibling counter service. Don't sprawl Redis access across route handlers.
 
-## Postgres — assistant chat metadata
+## Postgres — relational metadata
 
-Connection from `config.DATABASE_URL`. **Only used when `ASSISTANT_ENABLED` is true.** Pool is lazy-initialized in `services/chat-db.js` — keep it that way so the absence of `DATABASE_URL` doesn't break the rest of the app.
+Connection from `config.DATABASE_URL`. The pool lives in `services/pg.js` and is lazy-initialized — services call `pg.getPool()` only when a feature that needs it is actually invoked, so the absence of `DATABASE_URL` doesn't break startup. Three services own tables here; each one calls `ensureSchema()` on first use so a fresh deploy works even before someone runs the migrations by hand.
 
-Schema (lives in `migrations/001-assistant-chats.sql`, also created at runtime by `chat-db.ensureSchema()`):
+| Table             | Owner service          | Migration                          | Holds                                                                 |
+| ----------------- | ---------------------- | ---------------------------------- | --------------------------------------------------------------------- |
+| `users`           | `services/user.js`     | `migrations/003-users.sql`         | Publisher identity: `id`, `display_name`, `email`, `avatar`, `role`, `created_at`, `last_login`. Admin is session-only, not a row here. |
+| `assistant_chats` | `services/chat-db.js`  | `migrations/001-assistant-chats.sql` | Chat metadata index (transcript blob lives in S3 at `snapshot_s3_key`). |
+| `page_versions`   | `services/versions.js` | `migrations/002-page-versions.sql` | Per-slug snapshot index (snapshot HTML lives in S3 at `s3_key`).       |
 
 ```sql
+-- users (migration 003)
+CREATE TABLE users (
+  id            TEXT PRIMARY KEY,            -- "google-<profile.id>" or "admin"-shaped
+  display_name  TEXT NOT NULL DEFAULT '',
+  email         TEXT NOT NULL DEFAULT '',
+  avatar        TEXT NOT NULL DEFAULT '',
+  role          TEXT NOT NULL DEFAULT 'publisher',
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  last_login    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- assistant_chats (migration 001)
 CREATE TABLE assistant_chats (
   id              UUID PRIMARY KEY,
   user_id         TEXT NOT NULL,
@@ -59,7 +76,9 @@ CREATE INDEX idx_chats_user_page
   ON assistant_chats (user_id, page_slug, updated_at DESC);
 ```
 
-**Every query is scoped by `user_id`.** Look at `chat-db.js` — `WHERE user_id = $1 AND ...` appears in every read. This is how cross-user access is prevented by construction, not by a separate authz check. If you add a new query, keep the `user_id` predicate. Don't add a "for admin" branch — admins should not be able to read other users' chats.
+**The `users` table's `id` shape is load-bearing.** Rows are keyed by `"google-<profile.id>"` because `meta.json` already stores that exact string as the page `owner`. Don't switch to a UUID — you'd break every page row. If you add a new auth provider, use the same prefix scheme (`github-{id}`, etc.) and route through `userService.upsertUser`. Admin (`id === "admin"`) is intentionally not a row; it's reconstructed from the session in `routes/auth.js` and `getDisplayName` short-circuits for it.
+
+**Every chat query is scoped by `user_id`.** Look at `chat-db.js` — `WHERE user_id = $1 AND ...` appears in every read. This is how cross-user access is prevented by construction, not by a separate authz check. If you add a new query, keep the `user_id` predicate. Don't add a "for admin" branch — admins should not be able to read other users' chats. (The `users` table is identity, not user-owned data, so it doesn't have this constraint.)
 
 **Why split metadata from transcripts?** Listing chats for a sidebar needs SQL (`ORDER BY updated_at DESC LIMIT 100`). Full transcripts can be megabytes and would make `assistant_chats` huge if stored inline. So metadata in Postgres (indexed, queryable, small), transcript blobs in S3 (cheap, durable, big).
 
@@ -81,10 +100,13 @@ If you map the storage to the conceptual model:
 
 - The *catalogue* of pages → `meta.json` in S3
 - The *content* of pages → `pages/{slug}.html` in S3
-- The *catalogue* of users → `users.json` in S3
+- The *catalogue* of users → `users` in Postgres
 - The *popularity* of pages → counters in Redis
 - The *ephemeral* state (sessions) → Redis
 - The *catalogue* of chats → `assistant_chats` in Postgres
 - The *content* of chats → `chats/.../{chatId}.json` in S3
+- The *history* of pages → `page_versions` in Postgres + snapshot HTML in S3
 
-Notice the pattern: catalogues that need querying go to Postgres, catalogues that just need point lookup go to S3 JSON blobs, content always goes to S3, and ephemeral counters/sessions go to Redis. Apply this lens to new features and the right storage almost always falls out.
+Notice the pattern: catalogues with relational structure or write-amplification concerns go to Postgres, point-lookup catalogues where read-modify-write of the whole blob is cheap can stay in S3 JSON (that's why `meta.json` is still there), content always goes to S3, and ephemeral counters/sessions go to Redis. Apply this lens to new features and the right storage almost always falls out.
+
+`meta.json` is the last S3-JSON catalogue in the system — it's a candidate for Postgres if page counts ever grow into the tens of thousands (the read-modify-write becomes a write hotspot). The `users` migration (003) is a worked example of how that move looks: keep `services/{thing}.js`'s public API, swap the backend underneath, ship a one-shot backfill script.
