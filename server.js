@@ -17,6 +17,7 @@ const apiRoutes = require("./routes/api");
 const pageRoutes = require("./routes/pages");
 const settingsRoutes = require("./routes/settings");
 const assistantRoutes = require("./routes/assistant");
+const changelogRoutes = require("./routes/changelog");
 
 /**
  * ──────────────────────────────────────────────────────────────────────────
@@ -112,6 +113,9 @@ app.use("/api", apiRoutes);
 
 // Settings page
 app.use("/", settingsRoutes);
+
+// Changelog page
+app.use("/", changelogRoutes);
 
 // AI assistant (widget delivery + chat persistence API)
 app.use("/", assistantRoutes);
