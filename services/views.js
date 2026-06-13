@@ -3,41 +3,10 @@
  * Single Responsibility: Manage view counters in Redis
  */
 
+const { isBot } = require("./bots");
+
 /** Redis key prefix for view counters */
 const KEY_PREFIX = "shipfast:views:";
-
-/**
- * Known bot/crawler User-Agent patterns to exclude from counts
- */
-const BOT_PATTERNS = [
-  /bot/i,
-  /crawl/i,
-  /spider/i,
-  /slurp/i,
-  /facebookexternalhit/i,
-  /twitterbot/i,
-  /linkedinbot/i,
-  /whatsapp/i,
-  /telegrambot/i,
-  /applebot/i,
-  /googlebot/i,
-  /bingbot/i,
-  /duckduckbot/i,
-  /baiduspider/i,
-  /yandexbot/i,
-  /semrushbot/i,
-  /ahrefsbot/i,
-];
-
-/**
- * Check if a User-Agent string belongs to a known bot/crawler
- * @param {string} userAgent - User-Agent header value
- * @returns {boolean}
- */
-function isBot(userAgent) {
-  if (!userAgent) return false;
-  return BOT_PATTERNS.some((p) => p.test(userAgent));
-}
 
 /**
  * Build the Redis key for a page slug

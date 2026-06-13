@@ -4,6 +4,7 @@ const s3Service = require("../services/s3");
 const pageService = require("../services/page");
 const authMiddleware = require("../middleware/auth");
 const viewsService = require("../services/views");
+const botsService = require("../services/bots");
 const { notFoundHtml } = require("../templates/pages");
 
 /**
@@ -94,8 +95,13 @@ router.get("/p/:slug(*)", async (req, res) => {
       ? html + inject
       : html.slice(0, lastBodyIdx) + inject + html.slice(lastBodyIdx);
 
+  // For known bots/crawlers: send X-Robots-Tag: noindex and inject a
+  // <meta name="robots"> tag. Keeps content serving fast while hinting
+  // that user-pasted pages should stay out of search indexes.
+  const responseHtml = botsService.applyBotSeoHints(req, res, finalHtml);
+
   res.setHeader("Content-Type", "text/html; charset=utf-8");
-  res.send(finalHtml);
+  res.send(responseHtml);
 });
 
 module.exports = router;
