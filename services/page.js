@@ -127,6 +127,23 @@ async function setPageTags(slug, tags) {
 }
 
 /**
+ * Filter a page list to those a user may see, the single rule used for both the
+ * page list and the tag rail so they never disagree:
+ *   - Anonymous → public pages only
+ *   - Admin     → every page
+ *   - Publisher → public pages + their own pages
+ *
+ * @param {Array} pages
+ * @param {{ role?: string, id?: string }|null} user
+ * @returns {Array}
+ */
+function visiblePages(pages, user) {
+  if (!user) return pages.filter((p) => p.access === "public");
+  if (user.role === "admin") return pages;
+  return pages.filter((p) => p.access === "public" || p.owner === user.id);
+}
+
+/**
  * Filter a list of pages to those containing ALL of the given tags.
  * Matching is case-insensitive; multiple tags are AND-ed.
  * @param {Array} pages - Pages (each with a `tags` array)
@@ -154,4 +171,5 @@ module.exports = {
   listPages,
   setPageTags,
   filterPagesByTags,
+  visiblePages,
 };

@@ -17,7 +17,7 @@ Tag: feature
 - Dashboard: tag chips on each card; click a tag (card or rail) to filter the page list (shareable `?tag=` URL).
 - Published pages show crawlable tag chips linking back to the filtered dashboard.
 - API: `tags` accepted on `POST /api/pages`, returned by `GET /api/pages`, filterable via `?tag=` (AND-ed); new `PATCH /api/pages/:slug/tags` and `GET /api/tags` (counts).
-- Tag document counts are maintained in Postgres (new `tags` + `page_tags` tables, kept in sync by a trigger); falls back to deriving counts when no database is configured.
+- Tag document counts are maintained in Postgres (new `tags` + `page_tags` tables, kept in sync by a trigger), split by access level so publisher-gated pages never count toward the public view; falls back to deriving counts when no database is configured.
 - Invalid tags return a clear `400` naming the offending tag and the rule it broke.
 
 ## v1.5.0 — 2026-06-13 — Adding support for version history

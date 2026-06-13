@@ -1,12 +1,12 @@
 const pg = require("./pg");
 
 /**
- * TagsStore — relational index of page tags with a maintained doc_count.
+ * TagsStore — relational index of page tags with maintained counts.
  *
  * Source of truth for *which* tags a page has is still S3 meta.json (see
- * services/page.js). This store's job is to keep an authoritative, ordered
- * `doc_count` per tag so the dashboard can show tags ranked by popularity
- * without scanning every page. Schema: migrations/004-tags.sql.
+ * services/page.js). This store's job is to keep authoritative, ordered counts
+ * per tag — split by access level so a public viewer never sees counts from
+ * publisher-gated pages. Schema: migrations/004-tags.sql.
  *
  * When DATABASE_URL is not configured this is silently disabled:
  *   - setTagsForPage()/removeAllForSlug() are no-ops
@@ -34,27 +34,39 @@ function ensureSchema() {
       .query(
         `
         CREATE TABLE IF NOT EXISTS tags (
-          tag_key     TEXT PRIMARY KEY,
-          name        TEXT NOT NULL,
-          doc_count   INT  NOT NULL DEFAULT 0,
-          created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+          tag_key         TEXT PRIMARY KEY,
+          name            TEXT NOT NULL,
+          public_count    INT  NOT NULL DEFAULT 0,
+          publisher_count INT  NOT NULL DEFAULT 0,
+          created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
         );
         CREATE TABLE IF NOT EXISTS page_tags (
           slug        TEXT NOT NULL,
           tag_key     TEXT NOT NULL REFERENCES tags(tag_key) ON DELETE CASCADE,
+          access      TEXT NOT NULL DEFAULT 'publisher',
           created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
           PRIMARY KEY (slug, tag_key)
         );
         CREATE INDEX IF NOT EXISTS idx_page_tags_tag ON page_tags (tag_key);
-        CREATE INDEX IF NOT EXISTS idx_tags_doc_count ON tags (doc_count DESC, name ASC);
+        CREATE INDEX IF NOT EXISTS idx_tags_public_count ON tags (public_count DESC, name ASC);
+        CREATE INDEX IF NOT EXISTS idx_tags_total_count ON tags ((public_count + publisher_count) DESC, name ASC);
         CREATE OR REPLACE FUNCTION bump_tag_count() RETURNS trigger AS $$
         BEGIN
           IF (TG_OP = 'INSERT') THEN
-            UPDATE tags SET doc_count = doc_count + 1 WHERE tag_key = NEW.tag_key;
+            IF NEW.access = 'public' THEN
+              UPDATE tags SET public_count = public_count + 1 WHERE tag_key = NEW.tag_key;
+            ELSE
+              UPDATE tags SET publisher_count = publisher_count + 1 WHERE tag_key = NEW.tag_key;
+            END IF;
             RETURN NEW;
           ELSIF (TG_OP = 'DELETE') THEN
-            UPDATE tags SET doc_count = doc_count - 1 WHERE tag_key = OLD.tag_key;
-            DELETE FROM tags WHERE tag_key = OLD.tag_key AND doc_count <= 0;
+            IF OLD.access = 'public' THEN
+              UPDATE tags SET public_count = public_count - 1 WHERE tag_key = OLD.tag_key;
+            ELSE
+              UPDATE tags SET publisher_count = publisher_count - 1 WHERE tag_key = OLD.tag_key;
+            END IF;
+            DELETE FROM tags
+              WHERE tag_key = OLD.tag_key AND public_count <= 0 AND publisher_count <= 0;
             RETURN OLD;
           END IF;
           RETURN NULL;
@@ -77,14 +89,19 @@ function ensureSchema() {
 /**
  * Replace the tag set for a page. Upserts tag rows (preserving display casing),
  * then swaps the page's associations inside a transaction; the count trigger
- * keeps doc_count correct.
+ * keeps the per-access counts correct.
+ *
+ * Call this whenever a page's tags OR its access level changes, so the tag is
+ * counted in the right bucket (public vs publisher).
  *
  * @param {string} slug
  * @param {string[]} tags - already-validated display-form tags
+ * @param {string} access - the page's access level ('public' | 'publisher')
  */
-async function setTagsForPage(slug, tags) {
+async function setTagsForPage(slug, tags, access) {
   if (!isEnabled()) return;
   await ensureSchema();
+  const bucket = access === "public" ? "public" : "publisher";
   const pool = pg.getPool();
   const client = await pool.connect();
   try {
@@ -97,14 +114,15 @@ async function setTagsForPage(slug, tags) {
         [name]
       );
     }
-    // Swap associations: clear this page's rows, then re-add. The trigger nets
-    // out unchanged tags (−1 then +1) and correctly adjusts added/removed ones.
+    // Swap associations: clear this page's rows, then re-add with the current
+    // access. The trigger nets out unchanged tags (−1 then +1, possibly across
+    // buckets on an access change) and adjusts added/removed ones.
     await client.query(`DELETE FROM page_tags WHERE slug = $1`, [slug]);
     for (const name of tags) {
       await client.query(
-        `INSERT INTO page_tags (slug, tag_key) VALUES ($1, lower($2))
+        `INSERT INTO page_tags (slug, tag_key, access) VALUES ($1, lower($2), $3)
          ON CONFLICT DO NOTHING`,
-        [slug, name]
+        [slug, name, bucket]
       );
     }
     await client.query("COMMIT");
@@ -129,17 +147,22 @@ async function removeAllForSlug(slug) {
 
 /**
  * List tags ordered by document count (desc), name as tiebreak.
+ *
+ * @param {"public"|"all"} [scope="all"] - "public" counts only public pages
+ *   (for anonymous viewers); "all" counts public + publisher pages.
  * @returns {Promise<Array<{ name: string, count: number }>>}
  */
-async function listTagsByCount() {
+async function listTagsByCount(scope = "all") {
   if (!isEnabled()) return [];
   await ensureSchema();
+  const countExpr =
+    scope === "public" ? "public_count" : "(public_count + publisher_count)";
   const { rows } = await pg.getPool().query(
-    `SELECT name, doc_count FROM tags
-      WHERE doc_count > 0
-      ORDER BY doc_count DESC, name ASC`
+    `SELECT name, ${countExpr} AS count FROM tags
+      WHERE ${countExpr} > 0
+      ORDER BY ${countExpr} DESC, name ASC`
   );
-  return rows.map((r) => ({ name: r.name, count: Number(r.doc_count) }));
+  return rows.map((r) => ({ name: r.name, count: Number(r.count) }));
 }
 
 module.exports = {

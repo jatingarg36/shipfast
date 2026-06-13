@@ -8,7 +8,7 @@ const { test, describe } = require("node:test");
 const assert = require("node:assert/strict");
 
 const { validateTags, countTags, MAX_TAGS } = require("../services/tags");
-const { filterPagesByTags } = require("../services/page");
+const { filterPagesByTags, visiblePages } = require("../services/page");
 
 // ── validateTags: happy paths ───────────────────────────────────────────────
 
@@ -181,5 +181,53 @@ describe("countTags", () => {
 
   test("ignores pages without a tags field", () => {
     assert.deepEqual(countTags([{}, { tags: ["X"] }]), [{ name: "X", count: 1 }]);
+  });
+});
+
+// ── visiblePages + scoped tag counts (access separation) ────────────────────
+
+describe("visiblePages / scoped tag counts", () => {
+  const pages = [
+    { slug: "pub-a", access: "public", owner: "alice", tags: ["Shared", "Open"] },
+    { slug: "pub-b", access: "public", owner: "bob", tags: ["Shared"] },
+    { slug: "alice-priv", access: "publisher", owner: "alice", tags: ["Shared", "Secret"] },
+    { slug: "bob-priv", access: "publisher", owner: "bob", tags: ["Shared", "BobOnly"] },
+  ];
+
+  test("anonymous sees only public pages", () => {
+    const v = visiblePages(pages, null);
+    assert.deepEqual(v.map((p) => p.slug), ["pub-a", "pub-b"]);
+  });
+
+  test("anonymous tag counts exclude publisher-gated pages", () => {
+    const counts = countTags(visiblePages(pages, null));
+    // Shared appears on 2 public pages only (not the two private ones).
+    assert.deepEqual(counts, [
+      { name: "Shared", count: 2 },
+      { name: "Open", count: 1 },
+    ]);
+    // Publisher-only tags never leak to the public view.
+    assert.equal(counts.find((c) => c.name === "Secret"), undefined);
+    assert.equal(counts.find((c) => c.name === "BobOnly"), undefined);
+  });
+
+  test("a publisher sees public + their own pages (not others' private)", () => {
+    const v = visiblePages(pages, { id: "alice", role: "publisher" });
+    assert.deepEqual(v.map((p) => p.slug).sort(), ["alice-priv", "pub-a", "pub-b"]);
+  });
+
+  test("publisher tag counts = public + own, deduped, excluding others' private", () => {
+    const counts = countTags(visiblePages(pages, { id: "alice", role: "publisher" }));
+    const get = (n) => (counts.find((c) => c.name === n) || {}).count;
+    assert.equal(get("Shared"), 3); // 2 public + alice's private (bob's private excluded)
+    assert.equal(get("Secret"), 1); // alice's own private
+    assert.equal(get("Open"), 1);
+    assert.equal(get("BobOnly"), undefined); // bob's private — not visible to alice
+  });
+
+  test("an admin sees every page", () => {
+    const v = visiblePages(pages, { id: "root", role: "admin" });
+    assert.equal(v.length, 4);
+    assert.equal(countTags(v).find((c) => c.name === "Shared").count, 4);
   });
 });

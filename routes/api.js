@@ -25,22 +25,10 @@ const router = express.Router();
  * Optional `?tag=Foo` (repeatable) filters to pages with ALL given tags
  * (case-insensitive AND match).
  */
-/**
- * Filter a page list to those the current user may see.
- * - Anon: public only
- * - Admin: everything
- * - Publisher: own + public
- */
-function visibleToUser(pages, user) {
-  if (!user) return pages.filter((p) => p.access === "public");
-  if (user.role === "admin") return pages;
-  return pages.filter((p) => p.access === "public" || p.owner === user.id);
-}
-
 router.get("/pages", async (req, res) => {
   const pages = await pageService.listPages();
   const user = authMiddleware.getCurrentUser(req);
-  let filtered = visibleToUser(pages, user);
+  let filtered = pageService.visiblePages(pages, user);
 
   // Optional tag filter — ?tag=Foo or ?tag=Foo&tag=Bar (AND-ed)
   if (req.query.tag) {
@@ -62,21 +50,31 @@ router.get("/pages", async (req, res) => {
 /**
  * GET /api/tags
  * List tags ordered by document count (desc), name as tiebreak — for the
- * dashboard grouping rail. Uses the DB-maintained counts when configured,
- * otherwise derives counts from the pages visible to the current user.
+ * dashboard grouping rail. Counts mirror page visibility so the rail always
+ * agrees with the page list:
+ *   - Anonymous → public pages only (served from DB public_count).
+ *   - Admin     → every page (served from DB total).
+ *   - Publisher → public pages + their own — derived from the visible page
+ *                 list, since per-owner counts aren't materialized in the DB.
+ * Falls back to deriving from the visible page list when the DB is off.
  * Response: [{ name, count }]
  */
 router.get("/tags", async (req, res) => {
+  const user = authMiddleware.getCurrentUser(req);
+  // Fast paths backed by DB counts, but only where the DB count is exactly the
+  // viewer's scope: public-only for anon, the full total for admin. A regular
+  // publisher's scope is public + own (needs ownership), so it derives below.
   if (tagsStore.isEnabled()) {
     try {
-      return res.json(await tagsStore.listTagsByCount());
+      if (!user) return res.json(await tagsStore.listTagsByCount("public"));
+      if (user.role === "admin")
+        return res.json(await tagsStore.listTagsByCount("all"));
     } catch (err) {
       console.error("tags-store.listTagsByCount failed, deriving:", err);
     }
   }
   const pages = await pageService.listPages();
-  const user = authMiddleware.getCurrentUser(req);
-  res.json(tagsService.countTags(visibleToUser(pages, user)));
+  res.json(tagsService.countTags(pageService.visiblePages(pages, user)));
 });
 
 /**
@@ -202,16 +200,17 @@ router.post("/pages", authMiddleware.requireAuth, async (req, res) => {
   }
   await pageService.setPageMeta(slug, updates);
 
+  const pm = await pageService.getPageMeta(slug);
+
   // Keep the DB tag index in sync (best-effort; never blocks publishing).
+  // Pass the page's effective access so the tag lands in the right count bucket.
   if (validatedTags !== null) {
     try {
-      await tagsStore.setTagsForPage(slug, validatedTags);
+      await tagsStore.setTagsForPage(slug, validatedTags, pm.access);
     } catch (err) {
       console.error("tags-store.setTagsForPage on publish failed:", err);
     }
   }
-
-  const pm = await pageService.getPageMeta(slug);
   res.json({
     ok: true,
     slug,
@@ -286,7 +285,20 @@ router.patch(
     const raw = await s3Service.getText(`pages/${req.params.slug}.html`);
     if (raw === null) return res.status(404).json({ error: "Not found" });
 
+    const before = await pageService.getPageMeta(req.params.slug);
     await pageService.setPageMeta(req.params.slug, { access });
+
+    // Access changed → re-sync the tag index so the page's tags move to the
+    // correct count bucket (public ↔ publisher). Best-effort.
+    const tags = Array.isArray(before.tags) ? before.tags : [];
+    if (tags.length && before.access !== access) {
+      try {
+        await tagsStore.setTagsForPage(req.params.slug, tags, access);
+      } catch (err) {
+        console.error("tags-store re-sync on access change failed:", err);
+      }
+    }
+
     res.json({ ok: true, slug: req.params.slug, access });
   }
 );
@@ -306,9 +318,10 @@ router.patch(
     const result = await pageService.setPageTags(req.params.slug, req.body.tags);
     if (!result.ok) return res.status(400).json(result.error);
 
-    // Keep the DB tag index in sync (best-effort).
+    // Keep the DB tag index in sync (best-effort), in the page's access bucket.
     try {
-      await tagsStore.setTagsForPage(req.params.slug, result.tags);
+      const pm = await pageService.getPageMeta(req.params.slug);
+      await tagsStore.setTagsForPage(req.params.slug, result.tags, pm.access);
     } catch (err) {
       console.error("tags-store.setTagsForPage on patch failed:", err);
     }
