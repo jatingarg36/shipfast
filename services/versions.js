@@ -137,6 +137,14 @@ async function snapshotCurrent(slug, currentContent, type, label) {
   // Determine next version_n. There's a UNIQUE(slug, version_n) constraint, so
   // if two republishes race we'll occasionally hit a duplicate-key error;
   // retry once. (Strict serializability isn't worth the lock overhead here.)
+  //
+  // Order: write S3 *before* the DB insert, so a committed row always points
+  // to a real object. The failure mode is an orphaned S3 object (row never
+  // inserted) — cheaper to clean up than a dangling row that 404s on restore.
+  // On a retry after unique-violation, the previously-written object for the
+  // losing version_n is orphaned; lifecycle rules sweep it.
+  const safeLabel = cleanLabel(label);
+  const safeType = type || "html";
   let inserted = null;
   for (let attempt = 0; attempt < 2 && !inserted; attempt++) {
     const { rows: maxRows } = await pool.query(
@@ -145,8 +153,7 @@ async function snapshotCurrent(slug, currentContent, type, label) {
     );
     const nextN = Number(maxRows[0].max_n) + 1;
     const key = snapshotKey(slug, nextN);
-    const safeLabel = cleanLabel(label);
-    const safeType = type || "html";
+    await s3Service.putText(key, currentContent);
     try {
       const { rows } = await pool.query(
         `INSERT INTO page_versions (slug, version_n, s3_key, label, content_type)
@@ -156,17 +163,13 @@ async function snapshotCurrent(slug, currentContent, type, label) {
       );
       inserted = rows[0];
     } catch (err) {
-      // Unique-violation on race — loop will recompute nextN.
+      // Unique-violation on race — loop will recompute nextN. The S3 object
+      // just written at `key` is now orphaned; accept that (see comment above).
       if (err && err.code === "23505" && attempt === 0) continue;
       throw err;
     }
   }
   if (!inserted) return null;
-
-  // Write snapshot HTML to S3 *after* the DB row exists, so a successful DB
-  // row always corresponds to a real S3 object (in the failure case the row
-  // exists but the object is missing — accept that vs. orphaned S3 objects).
-  await s3Service.putText(inserted.s3_key, currentContent);
 
   // Prune oldest rows + their S3 objects if we exceeded the cap.
   // Sort newest-first, skip the MAX_VERSIONS we keep, delete what's left.
