@@ -394,10 +394,12 @@ nav{
 }
 .card-v2 .card-foot-v2 .meta{display:inline-flex;align-items:center;gap:.3rem}
 .card-v2 .card-foot-v2 .meta svg{width:11px;height:11px}
-.card-v2 .card-foot-v2 .act{margin-left:auto;display:inline-flex;align-items:center;gap:.7rem;color:var(--muted);transition:color .15s}
-.card-v2 .card-foot-v2 .act .btn-link{background:none;border:none;color:inherit;font-family:var(--mono);font-size:.66rem;cursor:pointer;padding:0;display:inline-flex;align-items:center;gap:.25rem;transition:color .15s}
-.card-v2 .card-foot-v2 .act .btn-link svg{width:11px;height:11px}
-.card-v2 .card-foot-v2 .act .btn-link:hover{color:var(--accent2)}
+.card-v2 .card-foot-v2 .meta.meta-views svg{width:16px;height:16px}
+.card-v2 .card-foot-v2 .act{margin-left:auto;display:inline-flex;align-items:center;gap:.55rem;color:var(--muted);transition:color .15s}
+.card-v2 .card-foot-v2 .act .btn-link{background:none;border:none;color:inherit;cursor:pointer;padding:.25rem;display:inline-flex;align-items:center;justify-content:center;transition:color .15s,background .15s;border-radius:6px}
+.card-v2 .card-foot-v2 .act .btn-link svg{width:16px;height:16px}
+.card-v2 .card-foot-v2 .act .btn-link:hover{color:var(--accent2);background:rgba(255,255,255,.05)}
+.card-v2 .card-foot-v2 .act .btn-link.copied{color:var(--success)}
 .card-v2 .card-foot-v2 .act .btn-link.danger:hover{color:var(--danger)}
 .card-v2 .lock{
   flex:none;font-size:.55rem;border:1px solid rgba(249,115,22,.4);
@@ -846,6 +848,39 @@ kbd{
 </head>
 <body>
 
+<!-- SVG icon sprite (kept in sync with public/icons/icons.svg) -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="display:none" aria-hidden="true">
+  <symbol id="icon-timestamp" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="9"/>
+    <polyline points="12,6 12,12 16,14"/>
+  </symbol>
+  <symbol id="icon-views" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M2,12 C5,5 19,5 22,12 C19,19 5,19 2,12 Z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </symbol>
+  <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M16,3 L21,8 L8,21 L3,21 L3,16 Z"/>
+    <line x1="13" y1="6" x2="18" y2="11"/>
+    <line x1="3" y1="21" x2="21" y2="21"/>
+  </symbol>
+  <symbol id="icon-history" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M3,9 A9,9 0 1 1 5.5,16.5"/>
+    <polyline points="3,5 3,9 7,9"/>
+    <polyline points="12,7 12,12 15,14"/>
+  </symbol>
+  <symbol id="icon-copy-url" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10,13 A5,5 0 0 0 17,13 L19,11 A5,5 0 0 0 12,4 L10.5,5.5"/>
+    <path d="M14,11 A5,5 0 0 0 7,11 L5,13 A5,5 0 0 0 12,20 L13.5,18.5"/>
+  </symbol>
+  <symbol id="icon-delete" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="3,6 21,6"/>
+    <path d="M8,6 L8,4 L16,4 L16,6"/>
+    <rect x="5" y="6" width="14" height="15" rx="2"/>
+    <line x1="10" y1="11" x2="10" y2="17"/>
+    <line x1="14" y1="11" x2="14" y2="17"/>
+  </symbol>
+</svg>
+
 <nav>
   <div class="nav-inner">
     <div class="nav-left">
@@ -925,7 +960,7 @@ kbd{
               '<div class="hero-url-result" id="heroUrlResult">' +
                 '<span class="live-dot"></span>' +
                 '<span class="hero-url-text" id="heroUrlText">…</span>' +
-                '<button class="hero-url-copy" id="heroUrlCopy" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>Copy</button>' +
+                '<button class="hero-url-copy" id="heroUrlCopy" type="button"><svg aria-hidden="true"><use href="#icon-copy-url"/></svg>Copy</button>' +
               '</div>' +
               '<div class="hero-demo-foot">' +
                 '<button class="hero-ship-btn" id="heroShipBtn" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>Ship ⌘↵</button>' +
@@ -1045,6 +1080,10 @@ kbd{
         </div>
         <div class="detected-type" id="detectedType"></div>
       </div>
+      <div class="field" id="versionLabelField" style="display:none">
+        <div class="field-head"><label for="versionLabel">Version label <span style="color:var(--muted2);font-weight:400">(optional)</span></label></div>
+        <input id="versionLabel" type="text" maxlength="80" placeholder="e.g. added pricing table" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:.55rem .75rem;color:var(--text);font-family:var(--sans);font-size:.85rem"/>
+      </div>
       <div class="modal-footer">
         <div class="modal-hint">
           <kbd>&#8984;</kbd><kbd>&#9166;</kbd> to publish
@@ -1092,6 +1131,33 @@ kbd{
     <div style="display:flex;gap:.5rem;justify-content:center">
       <button class="btn btn-ghost" onclick="cancelDelete()">Cancel</button>
       <button class="btn btn-delete-confirm" onclick="confirmDelete()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Restore confirmation modal — z-index above #historyOverlay so it stacks on top -->
+<div class="modal-overlay" id="restoreOverlay" style="z-index:110" onclick="if(event.target===this)cancelRestore()">
+  <div class="modal" style="max-width:400px;text-align:center;padding:2rem">
+    <div style="font-size:1.5rem;margin-bottom:.75rem;opacity:.6">&#8634;</div>
+    <h3 style="font-size:1rem;font-weight:700;margin-bottom:.35rem">Restore this version?</h3>
+    <p style="color:var(--muted);font-size:.82rem;margin-bottom:1.25rem">
+      <strong id="restoreVersionName"></strong> will become live. Your current content is saved as a new version first, so you can undo this.
+    </p>
+    <div style="display:flex;gap:.5rem;justify-content:center">
+      <button class="btn btn-ghost" onclick="cancelRestore()">Cancel</button>
+      <button class="btn btn-primary" id="restoreConfirmBtn" onclick="confirmRestore()">Restore</button>
+    </div>
+  </div>
+</div>
+
+<!-- History (version list) modal -->
+<div class="modal-overlay" id="historyOverlay" onclick="if(event.target===this)closeHistory()">
+  <div class="modal" style="max-width:520px;padding:1.5rem">
+    <h3 style="font-size:1rem;font-weight:700;margin-bottom:.25rem">Version history</h3>
+    <p id="historySlugName" style="color:var(--muted);font-size:.78rem;margin-bottom:1rem;font-family:var(--mono)"></p>
+    <div id="historyList" style="max-height:60vh;overflow:auto;display:flex;flex-direction:column;gap:.5rem;margin-bottom:1rem"></div>
+    <div style="display:flex;justify-content:flex-end">
+      <button class="btn btn-ghost" onclick="closeHistory()">Close</button>
     </div>
   </div>
 </div>
@@ -1328,6 +1394,8 @@ function resetModalFields(){
   if(slugWarnEl){ slugWarnEl.remove(); slugWarnEl=null; }
   publishBtn.classList.remove('loading'); publishBtn.textContent='Publish';
   setAccessLevel('publisher');
+  const vl=document.getElementById('versionLabel'); if(vl) vl.value='';
+  const vlf=document.getElementById('versionLabelField'); if(vlf) vlf.style.display='none';
 }
 function resetModal(){
   resetModalFields();
@@ -1347,6 +1415,8 @@ async function editPage(e,slug){
   htmlInput.value=r.source;
   setAccessLevel(r.access||'public');
   htmlInput.dispatchEvent(new Event('input'));
+  // Show the optional version label field only when republishing
+  const vlf=document.getElementById('versionLabelField'); if(vlf) vlf.style.display='block';
   openModal(true);
 }
 
@@ -1359,7 +1429,7 @@ function togglePreview(){
 
 // ── Keyboard ──
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape'){closeModal();cancelDelete()}
+  if(e.key==='Escape'){closeModal();cancelDelete();closeHistory();cancelRestore()}
   if((e.metaKey||e.ctrlKey)&&e.key==='Enter'){
     const o=document.getElementById('modalOverlay');
     if(o.classList.contains('open')&&document.getElementById('modalStep1').style.display!=='none') publish();
@@ -1377,7 +1447,8 @@ async function publish(){
   if(!html) return showToast('Paste some code','err');
   publishBtn.classList.add('loading');publishBtn.textContent=editingSlug?'Updating':'Publishing';
   try{
-    const r=await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug,html,access:currentAccess})});
+    const versionLabel=editingSlug ? ((document.getElementById('versionLabel')||{}).value || '').trim() : '';
+    const r=await fetch('/api/pages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slug,html,access:currentAccess,versionLabel})});
     const d=await r.json();
     if(d.ok){
       document.getElementById('modalStep1').style.display='none';
@@ -1400,9 +1471,102 @@ function copyUrl(){
 function copyPageUrl(e,slug){
   e.stopPropagation();e.preventDefault();
   navigator.clipboard.writeText(HOST+'/p/'+slug).then(()=>{
-    const b=e.currentTarget;b.classList.add('copied');b.innerHTML='\\u2713 Copied';
-    setTimeout(()=>{b.classList.remove('copied');b.innerHTML=copySvg+' Copy URL'},1500);
+    const b=e.currentTarget;
+    b.classList.add('copied');
+    const orig=b.getAttribute('title');
+    b.setAttribute('title','Copied!');
+    setTimeout(()=>{ b.classList.remove('copied'); if(orig) b.setAttribute('title',orig); },1500);
   });
+}
+
+// ── Version history ──
+let historySlug = null;
+function fmtVersionTime(iso){
+  try{ const d=new Date(iso); return d.toLocaleString(); }catch(e){ return iso||''; }
+}
+async function openHistory(e, slug){
+  e.stopPropagation(); e.preventDefault();
+  historySlug = slug;
+  document.getElementById('historySlugName').textContent='/p/'+slug;
+  const listEl = document.getElementById('historyList');
+  listEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:1rem;text-align:center">Loading…</div>';
+  document.getElementById('historyOverlay').classList.add('open');
+  try{
+    const resp = await fetch('/api/pages/'+slug+'/versions');
+    if(resp.status === 503){
+      listEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:1rem;text-align:center">Version history is not configured on this server.</div>';
+      return;
+    }
+    const r = await resp.json();
+    renderHistory(slug, r.versions||[]);
+  }catch(err){
+    listEl.innerHTML = '<div style="color:var(--danger);font-size:.82rem;padding:1rem;text-align:center">Failed to load history</div>';
+  }
+}
+function closeHistory(){
+  document.getElementById('historyOverlay').classList.remove('open');
+  historySlug = null;
+}
+function renderHistory(slug, versions){
+  const listEl = document.getElementById('historyList');
+  if(!versions.length){
+    listEl.innerHTML = '<div style="color:var(--muted);font-size:.82rem;padding:1rem;text-align:center">No previous versions yet. Republish this page to start building history.</div>';
+    return;
+  }
+  const btnStyle = 'padding:.35rem .7rem;font-size:.72rem;border-radius:6px';
+  listEl.innerHTML = versions.map(v => (
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:.75rem;padding:.7rem .85rem;border:1px solid var(--border);border-radius:8px;background:var(--surface2)">'
+      + '<div style="min-width:0;flex:1">'
+        + '<div style="font-weight:600;font-size:.82rem;color:var(--text)">v' + v.n + (v.label ? ' — ' + esc(v.label) : '') + '</div>'
+        + '<div style="font-size:.72rem;color:var(--muted);margin-top:.15rem">' + esc(fmtVersionTime(v.createdAt)) + '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:.4rem;flex-shrink:0">'
+        + '<button class="btn btn-ghost" type="button" style="' + btnStyle + '" onclick="previewVersion(&apos;' + slug + '&apos;,' + v.n + ')">Preview</button>'
+        + '<button class="btn btn-primary" type="button" style="' + btnStyle + '" onclick="restoreVersion(&apos;' + slug + '&apos;,' + v.n + ')">Restore</button>'
+      + '</div>'
+    + '</div>'
+  )).join('');
+}
+async function previewVersion(slug, n){
+  try{
+    const r = await fetch('/api/pages/'+slug+'/versions/'+n).then(r=>r.json());
+    if(!r || typeof r.content !== 'string'){ showToast('Could not load preview','err'); return; }
+    const w = window.open('', '_blank');
+    if(w){ w.document.open(); w.document.write(r.content); w.document.close(); }
+    else { showToast('Pop-up blocked','err'); }
+  }catch(err){ showToast('Preview failed','err'); }
+}
+let pendingRestore = null;
+function restoreVersion(slug, n){
+  pendingRestore = { slug, n };
+  document.getElementById('restoreVersionName').textContent = 'v' + n;
+  document.getElementById('restoreOverlay').classList.add('open');
+}
+function cancelRestore(){
+  pendingRestore = null;
+  document.getElementById('restoreOverlay').classList.remove('open');
+}
+async function confirmRestore(){
+  if(!pendingRestore) return;
+  const { slug, n } = pendingRestore;
+  const btn = document.getElementById('restoreConfirmBtn');
+  btn.classList.add('loading'); btn.textContent = 'Restoring';
+  try{
+    const r = await fetch('/api/pages/'+slug+'/versions/'+n+'/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({})});
+    const d = await r.json();
+    if(d && d.ok){
+      showToast('Restored v'+n,'ok');
+      const fresh = await fetch('/api/pages/'+slug+'/versions').then(r=>r.json());
+      renderHistory(slug, fresh.versions||[]);
+      loadPages();
+    } else {
+      showToast((d && d.error) || 'Restore failed','err');
+    }
+  }catch(err){ showToast('Restore failed','err'); }
+  finally{
+    btn.classList.remove('loading'); btn.textContent = 'Restore';
+    cancelRestore();
+  }
 }
 
 // ── Delete with undo ──
@@ -1447,9 +1611,13 @@ function sortPages(pages){
   return arr;
 }
 
-const clockSvg = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>';
-const editSvg  = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-const copySvg  = '<svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>';
+// Sprite refs (defined once in <body>, see public/icons/icons.svg).
+// Keep these small SVG strings so dashboard's string-concat render paths stay readable.
+const clockSvg   = '<svg width="12" height="12" aria-hidden="true"><use href="#icon-timestamp"/></svg>';
+const editSvg    = '<svg width="12" height="12" aria-hidden="true"><use href="#icon-edit"/></svg>';
+const copySvg    = '<svg width="12" height="12" aria-hidden="true"><use href="#icon-copy-url"/></svg>';
+const historySvg = '<svg width="12" height="12" aria-hidden="true"><use href="#icon-history"/></svg>';
+const deleteSvg  = '<svg width="12" height="12" aria-hidden="true"><use href="#icon-delete"/></svg>';
 
 function fmtViews(n) {
   if (!n) return '0';
@@ -1458,7 +1626,7 @@ function fmtViews(n) {
   return n.toLocaleString();
 }
 
-const eyeSvg = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const eyeSvg = '<svg width="11" height="11" aria-hidden="true"><use href="#icon-views"/></svg>';
 
 function renderPageCardHtml(p) {
   const ago = timeAgo(new Date(p.updated));
@@ -1476,11 +1644,12 @@ function renderPageCardHtml(p) {
     '</div>' +
     '<div class="card-foot-v2">' +
       '<span class="meta">' + clockSvg + ' ' + ago + '</span>' +
-      '<span class="meta">' + eyeSvg + ' ' + fmtViews(p.views || 0) + '</span>' +
+      '<span class="meta meta-views">' + eyeSvg + ' ' + fmtViews(p.views || 0) + '</span>' +
       '<span class="act">' +
-        (mine ? '<button type="button" class="btn-link" onclick="editPage(event,&apos;' + p.slug + '&apos;)">' + editSvg + ' Edit</button>' : '') +
-        '<button type="button" class="btn-link" onclick="copyPageUrl(event,&apos;' + p.slug + '&apos;)">' + copySvg + ' Copy URL</button>' +
-        (mine ? '<button type="button" class="btn-link danger" onclick="deletePage(event,&apos;' + p.slug + '&apos;)">Delete</button>' : '') +
+        (mine ? '<button type="button" class="btn-link" onclick="editPage(event,&apos;' + p.slug + '&apos;)" title="Edit" aria-label="Edit page">' + editSvg + '</button>' : '') +
+        (mine ? '<button type="button" class="btn-link" onclick="openHistory(event,&apos;' + p.slug + '&apos;)" title="Version history" aria-label="Version history">' + historySvg + '</button>' : '') +
+        '<button type="button" class="btn-link" onclick="copyPageUrl(event,&apos;' + p.slug + '&apos;)" title="Copy URL" aria-label="Copy page URL">' + copySvg + '</button>' +
+        (mine ? '<button type="button" class="btn-link danger" onclick="deletePage(event,&apos;' + p.slug + '&apos;)" title="Delete" aria-label="Delete page">' + deleteSvg + '</button>' : '') +
       '</span>' +
     '</div>' +
   '</a>';

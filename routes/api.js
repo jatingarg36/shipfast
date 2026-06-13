@@ -4,6 +4,7 @@ const pageService = require("../services/page");
 const contentService = require("../services/content");
 const authMiddleware = require("../middleware/auth");
 const viewsService = require("../services/views");
+const versionsService = require("../services/versions");
 
 /**
  * API Routes
@@ -54,7 +55,7 @@ router.get("/views/:slug(*)", async (req, res) => {
  * Requires authentication
  */
 router.post("/pages", authMiddleware.requireAuth, async (req, res) => {
-  let { slug, html, access } = req.body;
+  let { slug, html, access, versionLabel } = req.body;
   if (!slug || !html)
     return res.status(400).json({ error: "slug and html are required" });
 
@@ -113,8 +114,30 @@ router.post("/pages", authMiddleware.requireAuth, async (req, res) => {
 
   if (description.length > 150) description = description.slice(0, 147) + "...";
 
-  // Save content to S3
-  await s3Service.putText(`pages/${slug}.html`, content);
+  // Snapshot the previous live content as a version — but only when the
+  // body actually changed. Re-saves that don't touch the content (e.g. the
+  // user re-opened the edit modal just to flip the access level and hit
+  // Update) would otherwise create duplicate, byte-identical history rows.
+  // Failures must never block the new publish from going live.
+  const contentChanged = existing && existingRaw && existingRaw !== content;
+  if (contentChanged) {
+    try {
+      const prevMeta = await pageService.getPageMeta(slug);
+      await versionsService.snapshotCurrent(
+        slug,
+        existingRaw,
+        prevMeta.type || "html",
+        versionLabel
+      );
+    } catch (err) {
+      console.error("versions.snapshot on republish failed:", err);
+    }
+  }
+
+  // Save content to S3 (skip the round-trip if it's identical)
+  if (!existing || existingRaw !== content) {
+    await s3Service.putText(`pages/${slug}.html`, content);
+  }
 
   // Update metadata
   const updates = {
@@ -209,7 +232,7 @@ router.patch(
 
 /**
  * DELETE /api/pages/:slug
- * Delete a page (owner or admin only)
+ * Delete a page (owner or admin only). Also removes all version history.
  */
 router.delete("/pages/:slug(*)", authMiddleware.requirePageOwner, async (req, res) => {
   const raw = await s3Service.getText(`pages/${req.params.slug}.html`);
@@ -217,7 +240,109 @@ router.delete("/pages/:slug(*)", authMiddleware.requirePageOwner, async (req, re
 
   await s3Service.deleteObject(`pages/${req.params.slug}.html`);
   await pageService.deletePageMeta(req.params.slug);
+  try {
+    await versionsService.deleteAllForSlug(req.params.slug);
+  } catch (err) {
+    console.error("versions.deleteAllForSlug failed:", err);
+  }
   res.json({ ok: true });
 });
+
+/**
+ * Middleware: 503 when versioning isn't configured (no DATABASE_URL).
+ */
+function requireVersioning(req, res, next) {
+  if (!versionsService.isEnabled()) {
+    return res
+      .status(503)
+      .json({ error: "Version history is not configured on this server" });
+  }
+  next();
+}
+
+/**
+ * GET /api/pages/:slug/versions
+ * List historical versions (owner or admin only). Newest first.
+ */
+router.get(
+  "/pages/:slug(*)/versions",
+  requireVersioning,
+  authMiddleware.requirePageOwner,
+  async (req, res) => {
+    const versions = await versionsService.listVersions(req.params.slug);
+    // Strip the internal S3 key from the client payload
+    const safe = versions.map(({ n, createdAt, label, type }) => ({
+      n,
+      createdAt,
+      label: label || "",
+      type: type || "html",
+    }));
+    res.json({ slug: req.params.slug, versions: safe });
+  }
+);
+
+/**
+ * GET /api/pages/:slug/versions/:n
+ * Fetch the raw snapshot content for a specific version (for preview/diff).
+ * Owner or admin only.
+ */
+router.get(
+  "/pages/:slug(*)/versions/:n(\\d+)",
+  requireVersioning,
+  authMiddleware.requirePageOwner,
+  async (req, res) => {
+    const n = parseInt(req.params.n, 10);
+    const content = await versionsService.getVersionContent(req.params.slug, n);
+    if (content === null)
+      return res.status(404).json({ error: "Version not found" });
+    res.json({ slug: req.params.slug, n, content });
+  }
+);
+
+/**
+ * POST /api/pages/:slug/versions/:n/restore
+ * Promote a version to be the live page. The current live content is first
+ * snapshotted as a new version, so the restore itself is undoable.
+ * Owner or admin only.
+ */
+router.post(
+  "/pages/:slug(*)/versions/:n(\\d+)/restore",
+  requireVersioning,
+  authMiddleware.requirePageOwner,
+  async (req, res) => {
+    const slug = req.params.slug;
+    const n = parseInt(req.params.n, 10);
+
+    const target = await versionsService.getVersionContent(slug, n);
+    if (target === null)
+      return res.status(404).json({ error: "Version not found" });
+
+    const currentRaw = await s3Service.getText(`pages/${slug}.html`);
+    if (currentRaw === null)
+      return res.status(404).json({ error: "Page not found" });
+
+    // Snapshot current content first so restore is reversible
+    try {
+      const prevMeta = await pageService.getPageMeta(slug);
+      const label =
+        typeof req.body?.label === "string"
+          ? req.body.label
+          : `Before restore to v${n}`;
+      await versionsService.snapshotCurrent(
+        slug,
+        currentRaw,
+        prevMeta.type || "html",
+        label
+      );
+    } catch (err) {
+      console.error("versions.snapshot before restore failed:", err);
+    }
+
+    await s3Service.putText(`pages/${slug}.html`, target);
+    await pageService.setPageMeta(slug, { updated: new Date().toISOString() });
+
+    res.json({ ok: true, slug, restoredFromVersion: n });
+  }
+);
 
 module.exports = router;

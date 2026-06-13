@@ -1,4 +1,5 @@
 const config = require("../config");
+const pg = require("./pg");
 
 /**
  * ChatDbService - AI assistant chat metadata (RDS Postgres)
@@ -10,26 +11,14 @@ const config = require("../config");
  * construction.
  */
 
-let pool = null;
-
 /**
- * Lazily create the pg pool (keeps `pg` optional when the feature is off).
  * @returns {import('pg').Pool}
  */
 function getPool() {
   if (!config.ASSISTANT_ENABLED) {
     throw new Error("AI assistant is not enabled (DATABASE_URL missing)");
   }
-  if (!pool) {
-    const { Pool } = require("pg");
-    pool = new Pool({
-      connectionString: config.DATABASE_URL,
-      max: 3, // serverless-friendly; use RDS Proxy/PgBouncer in production
-      idleTimeoutMillis: 10_000,
-    });
-    pool.on("error", (err) => console.error("pg pool error:", err));
-  }
-  return pool;
+  return pg.getPool();
 }
 
 let schemaReady = null;
