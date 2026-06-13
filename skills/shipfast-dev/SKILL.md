@@ -28,7 +28,7 @@ config.js              env loading + validation (SESSION_SECRET, REDIS_URL, S3_B
 
 services/              pure business logic — no Express, no req/res
   s3.js                S3 wrapper: getText/putText/deleteObject/list
-  user.js              users.json on S3 (readUsers/writeUsers/upsertUser/getDisplayName)
+  user.js              Postgres users table (readUsers/writeUsers/upsertUser/getDisplayName)
   page.js              meta.json on S3 (listPages/getPageMeta/setPageMeta/deletePageMeta/getAccess)
   content.js           detectType(html|jsx|md) + wrapJsx + wrapMarkdown
   views.js             Redis view counters (incrementView/getViewCount/getViewCounts/isBot)

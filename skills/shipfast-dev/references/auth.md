@@ -12,9 +12,9 @@ A "user" in this system is whatever ends up on `req.user` after `passport.deseri
 { id: "admin", displayName: "Admin", role: "admin" }
 ```
 
-There is no admin database; the admin object is reconstructed from the session every request. Changing the admin password means changing `PUBLISHER_PASSWORD` in env. Don't `upsertUser()` the admin into `users.json` — it's not meant to be a normal user record.
+There is no admin database; the admin object is reconstructed from the session every request. Changing the admin password means changing `PUBLISHER_PASSWORD` in env. Don't `upsertUser()` the admin into the `users` table — it's not meant to be a normal user record.
 
-**Publisher** — created on Google OAuth callback. Persisted in `users.json` via `userService.upsertUser`:
+**Publisher** — created on Google OAuth callback. Persisted in the Postgres `users` table (see `migrations/003-users.sql`) via `userService.upsertUser`:
 
 ```js
 {
@@ -28,7 +28,9 @@ There is no admin database; the admin object is reconstructed from the session e
 }
 ```
 
-The `google-` prefix on the id is load-bearing — `meta.json` stores it as the page owner, and that prefix is how the system knows "this owner is a Google user, look them up in `users.json` for the display name".
+The `google-` prefix on the id is load-bearing — `meta.json` stores it as the page owner, and that prefix is how the system knows "this owner is a Google user, look them up in the `users` table for the display name".
+
+> Historical note: prior to migration 003 these rows lived in a single `users.json` blob in S3. `scripts/backfill-users-from-s3.js` copies that blob into Postgres for any deployment that pre-dates the cutover.
 
 If you ever add a third provider (GitHub, etc.), use a similar prefix scheme (`github-{id}`) and route through `upsertUser`. Default `role: "publisher"` — only the password flow creates admins.
 
